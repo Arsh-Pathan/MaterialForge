@@ -15,7 +15,7 @@ MANDATORY
     MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
 - The inference script must be named `inference.py` and placed in the root directory of the project.
-- Participants must use the OpenAI Client for all LLM calls using the above variables.
+- Participants must use  the OpenAI Client for all LLM calls using the above variables.
 
 STDOUT FORMAT
 - The script must emit exactly three line types to stdout, in this order:
