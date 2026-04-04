@@ -131,10 +131,11 @@ MaterialForge/
     ├── client.py             # MaterialForgeEnv WebSocket client
     ├── openenv.yaml          # OpenEnv manifest
     ├── pyproject.toml        # Package metadata & dependencies
+    ├── inference.py              # Inference script for hackathon submission
+    ├── Dockerfile                # Container image
     └── server/
         ├── app.py                            # FastAPI application (HTTP + WS)
-        ├── material_forge_env_environment.py # MaterialForgeEnvironment(Environment)
-        └── Dockerfile                        # Container image
+        └── material_forge_env_environment.py # MaterialForgeEnvironment(Environment)
 ```
 
 ## Environment Details
