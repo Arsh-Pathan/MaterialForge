@@ -1,104 +1,195 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
+"""MaterialForge Environment Implementation.
 
-"""
-Material Forge Env Environment Implementation.
-
-A simple test environment that echoes back messages sent to it.
-Perfect for testing HTTP server infrastructure.
+An RL environment where an agent designs atomic crystal structures on an 8x8
+lattice to match target material properties.
 """
 
+import random
 from uuid import uuid4
 
 from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
 
 try:
+    from ..config import PROPERTY_NAMES
+    from ..lattice import Lattice
     from ..models import MaterialForgeAction, MaterialForgeObservation
+    from ..physics import (
+        classify_phase,
+        compute_lattice_quality,
+        compute_stability,
+        estimate_properties,
+    )
+    from ..scenarios import generate_scenario
 except ImportError:
+    from config import PROPERTY_NAMES
+    from lattice import Lattice
     from models import MaterialForgeAction, MaterialForgeObservation
+    from physics import (
+        classify_phase,
+        compute_lattice_quality,
+        compute_stability,
+        estimate_properties,
+    )
+    from scenarios import generate_scenario
 
 
 class MaterialForgeEnvironment(Environment):
-    """
-    A simple echo environment that echoes back messages.
+    """RL environment for designing crystal structures on a lattice grid.
 
-    This environment is designed for testing the HTTP server infrastructure.
-    It maintains minimal state and simply echoes back whatever message it receives.
-
-    Example:
-        >>> env = MaterialForgeEnvironment()
-        >>> obs = env.reset()
-        >>> print(obs.echoed_message)  # "Material Forge Env environment ready!"
-        >>>
-        >>> obs = env.step(MaterialForgeAction(message="Hello"))
-        >>> print(obs.echoed_message)  # "Hello"
-        >>> print(obs.message_length)  # 5
+    The agent places, replaces, or removes atoms on an 8x8 grid to achieve
+    target material properties (hardness, conductivity, thermal_resistance,
+    elasticity). Episodes end when max_steps is reached or all properties
+    are within tolerance of the target.
     """
 
-    # Enable concurrent WebSocket sessions.
-    # Set to True if your environment isolates state between instances.
-    # When True, multiple WebSocket clients can connect simultaneously, each
-    # getting their own environment instance (when using factory mode in app.py).
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
-    def __init__(self):
-        """Initialize the material_forge_env environment."""
+    def __init__(self, rubric=None):
+        super().__init__(rubric=rubric)
+        self._lattice = Lattice()
         self._state = State(episode_id=str(uuid4()), step_count=0)
-        self._reset_count = 0
+        self._scenario = {}
+        self._target = {}
+        self._cost_budget = 80.0
+        self._tolerance = 10.0
+        self._max_steps = 50
+        self._difficulty = "medium"
 
-    def reset(self) -> MaterialForgeObservation:
-        """
-        Reset the environment.
-
-        Returns:
-            MaterialForgeObservation with a ready message
-        """
-        self._state = State(episode_id=str(uuid4()), step_count=0)
-        self._reset_count += 1
-
-        return MaterialForgeObservation(
-            echoed_message="Material Forge Env environment ready!",
-            message_length=0,
-            done=False,
-            reward=0.0,
-        )
-
-    def step(self, action: MaterialForgeAction) -> MaterialForgeObservation:  # type: ignore[override]
-        """
-        Execute a step in the environment by echoing the message.
+    def reset(self, seed: int | None = None, **kwargs) -> MaterialForgeObservation:
+        """Reset environment with a new scenario.
 
         Args:
-            action: MaterialForgeAction containing the message to echo
-
-        Returns:
-            MaterialForgeObservation with the echoed message and its length
+            seed: Optional random seed for reproducibility.
         """
+        if seed is not None:
+            random.seed(seed)
+
+        difficulty = kwargs.get("difficulty", "medium")
+        scenario_name = kwargs.get("scenario_name", None)
+        self._scenario = generate_scenario(difficulty=difficulty, name=scenario_name)
+        self._target = self._scenario["target"]
+        self._cost_budget = float(self._scenario["cost_budget"])
+        self._tolerance = float(self._scenario["tolerance"])
+        self._max_steps = int(self._scenario["max_steps"])
+        self._difficulty = self._scenario["difficulty"]
+
+        self._lattice = Lattice()
+        self._state = State(episode_id=str(uuid4()), step_count=0)
+
+        self._reset_rubric()
+
+        return self._build_observation(done=False, reward=0.0)
+
+    def step(self, action: MaterialForgeAction) -> MaterialForgeObservation:  # type: ignore[override]
+        """Execute one step: apply action, compute properties, score, check done."""
         self._state.step_count += 1
 
-        message = action.message
-        length = len(message)
+        # Apply action to lattice
+        success = self._apply_action(action)
 
-        # Simple reward: longer messages get higher rewards
-        reward = length * 0.1
+        # Compute current state
+        properties = estimate_properties(self._lattice)
+        phase = classify_phase(self._lattice)
+        stability = compute_stability(self._lattice)
+        quality = compute_lattice_quality(self._lattice)
+
+        # Check termination
+        done = self._check_done(properties)
+
+        # Build observation with score breakdown
+        score_breakdown = {
+            "stability": stability,
+            "lattice_quality": quality,
+            "action_valid": 1.0 if success else 0.0,
+        }
+
+        obs = MaterialForgeObservation(
+            grid=self._lattice.get_grid(),
+            target=self._target,
+            current_properties=properties,
+            phase=phase,
+            total_cost=self._lattice.total_cost(),
+            cost_budget=self._cost_budget,
+            step_number=self._state.step_count,
+            max_steps=self._max_steps,
+            score_breakdown=score_breakdown,
+            done=done,
+            reward=0.0,  # placeholder, rubric will compute
+            metadata={
+                "difficulty": self._difficulty,
+                "scenario_name": self._scenario.get("name"),
+                "tolerance": self._tolerance,
+                "action_success": success,
+            },
+        )
+
+        # Apply rubric to get reward
+        reward = self._apply_rubric(action, obs)
+        obs.reward = reward
+
+        return obs
+
+    def _apply_action(self, action: MaterialForgeAction) -> bool:
+        """Apply the action to the lattice. Returns True if action was valid."""
+        if action.action_type == "place":
+            if action.atom is None:
+                return False
+            return self._lattice.place(action.row, action.col, action.atom)
+        elif action.action_type == "replace":
+            if action.atom is None:
+                return False
+            return self._lattice.replace(action.row, action.col, action.atom)
+        elif action.action_type == "remove":
+            return self._lattice.remove(action.row, action.col)
+        return False
+
+    def _check_done(self, properties: dict) -> bool:
+        """Check if episode should end."""
+        # Step limit
+        if self._state.step_count >= self._max_steps:
+            return True
+
+        # All properties within tolerance
+        if self._lattice.atom_count() > 0:
+            all_within = all(
+                abs(properties.get(p, 0.0) - self._target.get(p, 0.0)) <= self._tolerance
+                for p in PROPERTY_NAMES
+            )
+            if all_within:
+                return True
+
+        return False
+
+    def _build_observation(self, done: bool, reward: float) -> MaterialForgeObservation:
+        """Build an observation from current state."""
+        properties = estimate_properties(self._lattice)
+        phase = classify_phase(self._lattice)
+        stability = compute_stability(self._lattice)
+        quality = compute_lattice_quality(self._lattice)
 
         return MaterialForgeObservation(
-            echoed_message=message,
-            message_length=length,
-            done=False,
+            grid=self._lattice.get_grid(),
+            target=self._target,
+            current_properties=properties,
+            phase=phase,
+            total_cost=self._lattice.total_cost(),
+            cost_budget=self._cost_budget,
+            step_number=self._state.step_count,
+            max_steps=self._max_steps,
+            score_breakdown={
+                "stability": stability,
+                "lattice_quality": quality,
+            },
+            done=done,
             reward=reward,
-            metadata={"original_message": message, "step": self._state.step_count},
+            metadata={
+                "difficulty": self._difficulty,
+                "scenario_name": self._scenario.get("name"),
+                "tolerance": self._tolerance,
+            },
         )
 
     @property
     def state(self) -> State:
-        """
-        Get the current environment state.
-
-        Returns:
-            Current State with episode_id and step_count
-        """
         return self._state

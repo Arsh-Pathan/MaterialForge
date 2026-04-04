@@ -1,27 +1,40 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
+"""Data models for the MaterialForge environment."""
 
-"""
-Data models for the Material Forge Env Environment.
-
-The material_forge_env environment is a simple test environment that echoes back messages.
-"""
+from typing import Dict, List, Literal, Optional
 
 from openenv.core.env_server.types import Action, Observation
 from pydantic import Field
 
+from .config import GRID_SIZE
+
 
 class MaterialForgeAction(Action):
-    """Action for the Material Forge Env environment - just a message to echo."""
+    """Action to manipulate atoms on the crystal lattice."""
 
-    message: str = Field(..., description="Message to echo back")
+    action_type: Literal["place", "replace", "remove"] = Field(
+        ..., description="Type of lattice operation"
+    )
+    row: int = Field(..., ge=0, lt=GRID_SIZE, description="Row index on the grid")
+    col: int = Field(..., ge=0, lt=GRID_SIZE, description="Column index on the grid")
+    atom: Optional[Literal["A", "B", "C", "P"]] = Field(
+        default=None, description="Atom type (required for place/replace, ignored for remove)"
+    )
 
 
 class MaterialForgeObservation(Observation):
-    """Observation from the Material Forge Env environment - the echoed message."""
+    """Observation from the MaterialForge environment after each step."""
 
-    echoed_message: str = Field(default="", description="The echoed message")
-    message_length: int = Field(default=0, description="Length of the echoed message")
+    grid: List[List[str]] = Field(description="8x8 lattice grid state")
+    target: Dict[str, float] = Field(description="Target property values to achieve")
+    current_properties: Dict[str, float] = Field(
+        description="Current estimated material properties"
+    )
+    phase: str = Field(description="Crystal phase classification")
+    total_cost: float = Field(description="Total cost of atoms on the grid")
+    cost_budget: float = Field(description="Maximum cost budget for this episode")
+    step_number: int = Field(description="Current step number")
+    max_steps: int = Field(description="Maximum steps allowed")
+    score_breakdown: Dict[str, float] = Field(
+        description="Breakdown of reward components"
+    )
+    hint: Optional[str] = Field(default=None, description="Optional hint from LLM engine")

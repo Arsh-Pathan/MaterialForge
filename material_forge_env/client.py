@@ -1,10 +1,4 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
-
-"""Material Forge Env Environment Client."""
+"""MaterialForge Environment Client."""
 
 from typing import Dict
 
@@ -18,60 +12,45 @@ from .models import MaterialForgeAction, MaterialForgeObservation
 class MaterialForgeEnv(
     EnvClient[MaterialForgeAction, MaterialForgeObservation, State]
 ):
-    """
-    Client for the Material Forge Env Environment.
+    """Client for the MaterialForge Environment.
 
-    This client maintains a persistent WebSocket connection to the environment server,
-    enabling efficient multi-step interactions with lower latency.
-    Each client instance has its own dedicated environment session on the server.
+    Maintains a persistent WebSocket connection to the environment server.
+    Each client instance has its own dedicated environment session.
 
     Example:
-        >>> # Connect to a running server
         >>> with MaterialForgeEnv(base_url="http://localhost:8000") as client:
         ...     result = client.reset()
-        ...     print(result.observation.echoed_message)
-        ...
-        ...     result = client.step(MaterialForgeAction(message="Hello!"))
-        ...     print(result.observation.echoed_message)
-
-    Example with Docker:
-        >>> # Automatically start container and connect
-        >>> client = MaterialForgeEnv.from_docker_image("material_forge_env-env:latest")
-        >>> try:
-        ...     result = client.reset()
-        ...     result = client.step(MaterialForgeAction(message="Test"))
-        ... finally:
-        ...     client.close()
+        ...     print(result.observation.grid)
+        ...     action = MaterialForgeAction(action_type="place", row=0, col=0, atom="A")
+        ...     result = client.step(action)
+        ...     print(result.observation.current_properties)
     """
 
     def _step_payload(self, action: MaterialForgeAction) -> Dict:
-        """
-        Convert MaterialForgeAction to JSON payload for step message.
-
-        Args:
-            action: MaterialForgeAction instance
-
-        Returns:
-            Dictionary representation suitable for JSON encoding
-        """
-        return {
-            "message": action.message,
+        """Convert MaterialForgeAction to JSON payload for step message."""
+        payload = {
+            "action_type": action.action_type,
+            "row": action.row,
+            "col": action.col,
         }
+        if action.atom is not None:
+            payload["atom"] = action.atom
+        return payload
 
     def _parse_result(self, payload: Dict) -> StepResult[MaterialForgeObservation]:
-        """
-        Parse server response into StepResult[MaterialForgeObservation].
-
-        Args:
-            payload: JSON response data from server
-
-        Returns:
-            StepResult with MaterialForgeObservation
-        """
+        """Parse server response into StepResult[MaterialForgeObservation]."""
         obs_data = payload.get("observation", {})
         observation = MaterialForgeObservation(
-            echoed_message=obs_data.get("echoed_message", ""),
-            message_length=obs_data.get("message_length", 0),
+            grid=obs_data.get("grid", []),
+            target=obs_data.get("target", {}),
+            current_properties=obs_data.get("current_properties", {}),
+            phase=obs_data.get("phase", "amorphous"),
+            total_cost=obs_data.get("total_cost", 0.0),
+            cost_budget=obs_data.get("cost_budget", 80.0),
+            step_number=obs_data.get("step_number", 0),
+            max_steps=obs_data.get("max_steps", 50),
+            score_breakdown=obs_data.get("score_breakdown", {}),
+            hint=obs_data.get("hint"),
             done=payload.get("done", False),
             reward=payload.get("reward"),
             metadata=obs_data.get("metadata", {}),
@@ -84,15 +63,7 @@ class MaterialForgeEnv(
         )
 
     def _parse_state(self, payload: Dict) -> State:
-        """
-        Parse server response into State object.
-
-        Args:
-            payload: JSON response from state request
-
-        Returns:
-            State object with episode_id and step_count
-        """
+        """Parse server response into State object."""
         return State(
             episode_id=payload.get("episode_id"),
             step_count=payload.get("step_count", 0),
