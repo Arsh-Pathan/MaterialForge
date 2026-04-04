@@ -5,7 +5,10 @@ from typing import Dict, List, Literal, Optional
 from openenv.core.env_server.types import Action, Observation
 from pydantic import Field
 
-from .config import GRID_SIZE
+try:
+    from .config import GRID_SIZE
+except ImportError:
+    from config import GRID_SIZE
 
 
 class MaterialForgeAction(Action):

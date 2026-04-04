@@ -5,7 +5,10 @@ from __future__ import annotations
 import copy
 from typing import Dict, List
 
-from .config import ATOM_TYPES, EMPTY, GRID_SIZE
+try:
+    from .config import ATOM_TYPES, EMPTY, GRID_SIZE
+except ImportError:
+    from config import ATOM_TYPES, EMPTY, GRID_SIZE
 
 
 class Lattice:

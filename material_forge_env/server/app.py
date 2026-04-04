@@ -21,7 +21,7 @@ try:
     from ..models import MaterialForgeAction, MaterialForgeObservation
     from ..rubrics import HeuristicRewardRubric
     from .material_forge_env_environment import MaterialForgeEnvironment
-except ModuleNotFoundError:
+except ImportError:
     from models import MaterialForgeAction, MaterialForgeObservation
     from rubrics import HeuristicRewardRubric
     from server.material_forge_env_environment import MaterialForgeEnvironment

@@ -2,7 +2,10 @@
 
 from openenv.core.rubrics import Rubric
 
-from .config import PROPERTY_NAMES
+try:
+    from .config import PROPERTY_NAMES
+except ImportError:
+    from config import PROPERTY_NAMES
 
 
 class HeuristicRewardRubric(Rubric):

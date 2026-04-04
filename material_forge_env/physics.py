@@ -2,8 +2,12 @@
 
 from typing import Dict
 
-from .config import ATOM_TYPES, EMPTY, PROPERTY_NAMES
-from .lattice import Lattice
+try:
+    from .config import ATOM_TYPES, EMPTY, PROPERTY_NAMES
+    from .lattice import Lattice
+except ImportError:
+    from config import ATOM_TYPES, EMPTY, PROPERTY_NAMES
+    from lattice import Lattice
 
 
 def estimate_properties(lattice: Lattice) -> Dict[str, float]:

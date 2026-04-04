@@ -3,7 +3,10 @@
 import random
 from typing import Dict
 
-from .config import DIFFICULTY_PRESETS, PROPERTY_NAMES
+try:
+    from .config import DIFFICULTY_PRESETS, PROPERTY_NAMES
+except ImportError:
+    from config import DIFFICULTY_PRESETS, PROPERTY_NAMES
 
 
 # Predefined named scenarios with characteristic target profiles
