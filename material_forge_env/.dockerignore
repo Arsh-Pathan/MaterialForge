@@ -1,0 +1,65 @@
+# Python cache
+
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+
+.venv
+venv
+env
+env/
+ENV/
+
+# Jupyter
+
+.ipynb_checkpoints
+
+# Git
+
+.git
+.gitignore
+
+# Docker
+
+.dockerignore
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# IDE
+
+.vscode
+.idea
+
+# Logs
+
+*.log
+
+# Build artifacts
+
+build/
+dist/
+*.egg-info/
+
+# Testing
+
+.pytest_cache
+.coverage
+
+# Local configuration
+
+.env
+
+# Node (if any frontend)
+
+node_modules/
+
+# HuggingFace / ML cache
+
+.cache
+huggingface_cache

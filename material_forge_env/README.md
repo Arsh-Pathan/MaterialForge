@@ -22,23 +22,48 @@ MaterialForge is an OpenEnv reinforcement learning environment where an AI agent
 
 Given a target specification (hardness, conductivity, thermal resistance, elasticity), the agent places, replaces, and removes atoms to construct a crystal structure that satisfies the requirements within a cost budget.
 
-## Try It
+## Hugging Face Space Deployment
 
-Use the **Playground** tab above to interact with the environment, or connect programmatically via the API.
+This Space is built from OpenEnv environment `material_forge_env`.
 
-### Python Client
+- **Space URL**: [huggingface.co/spaces/ArshPathan/material_forge_env](https://huggingface.co/spaces/ArshPathan/material_forge_env)
+- **Hub Tag**: `openenv`
+- **SDK**: Docker (FastAPI)
+
+### Connecting from Code
+
+Use the `MaterialForgeEnv` client to connect to this environment programmatically.
+
+```python
+from material_forge_env import MaterialForgeEnv
+
+# Connect to the Hugging Face Space
+env = MaterialForgeEnv(base_url="https://ArshPathan-material-forge-env.hf.space")
+
+# Alternatively, connect to a local server
+# env = MaterialForgeEnv(base_url="http://localhost:8000")
+
+with env:
+    result = env.reset()
+    print(f"Target Properties: {result.observation.target}")
+```
+
+## Quick Start
+
+### Python Client Example
 
 ```python
 from material_forge_env import MaterialForgeAction, MaterialForgeEnv
 
 with MaterialForgeEnv(base_url="https://ArshPathan-material-forge-env.hf.space") as env:
+    # Reset to a fresh episode
     result = env.reset()
-    print(f"Target: {result.observation.target}")
-    print(f"Budget: {result.observation.cost_budget}")
-
-    # Place a metal atom at (0, 0)
-    result = env.step(MaterialForgeAction(action_type="place", row=0, col=0, atom="A"))
-    print(f"Properties: {result.observation.current_properties}")
+    
+    # Place a metal atom (A) at row 0, col 0
+    action = MaterialForgeAction(action_type="place", row=0, col=0, atom="A")
+    result = env.step(action)
+    
+    print(f"Current Properties: {result.observation.current_properties}")
     print(f"Reward: {result.reward:.4f}")
 ```
 
@@ -52,12 +77,9 @@ curl -X POST https://ArshPathan-material-forge-env.hf.space/reset
 curl -X POST https://ArshPathan-material-forge-env.hf.space/step \
   -H "Content-Type: application/json" \
   -d '{"action_type": "place", "row": 0, "col": 0, "atom": "A"}'
-
-# Health check
-curl https://ArshPathan-material-forge-env.hf.space/health
 ```
 
-Full API docs: [/docs](https://ArshPathan-material-forge-env.hf.space/docs)
+Full API documentation available at [/docs](https://ArshPathan-material-forge-env.hf.space/docs).
 
 ## Environment Details
 
@@ -72,7 +94,7 @@ Full API docs: [/docs](https://ArshPathan-material-forge-env.hf.space/docs)
 
 ### Action Space
 
-```
+```python
 action_type: "place" | "replace" | "remove"
 row: 0-7
 col: 0-7
@@ -85,13 +107,11 @@ atom: "A" | "B" | "C" | "P"  (required for place/replace)
 |-------|-------------|
 | `grid` | 8x8 lattice state (atom symbols or `"."` for empty) |
 | `target` | Target property values (hardness, conductivity, thermal_resistance, elasticity) |
-| `current_properties` | Estimated properties of the current structure (0-100 scale) |
+| `current_properties` | Estimated properties of current structure (0-100) |
 | `phase` | Crystal phase: `"crystalline"`, `"polycrystalline"`, or `"amorphous"` |
-| `total_cost` / `cost_budget` | Current spend vs. allowed budget |
-| `step_number` / `max_steps` | Episode progress |
-| `score_breakdown` | Component-wise reward breakdown |
+| `total_cost` | Current atom cost spend |
 | `reward` | Scalar reward signal (0.0 - 1.0) |
-| `done` | Whether the episode has ended |
+| `done` | Whether requirements met or budget exceeded |
 
 ### Reward Formula
 
@@ -103,33 +123,15 @@ reward = 0.50 x property_match
        - cost_penalty
 ```
 
-### Difficulty Presets
+## Scenarios & Difficulty
+
+MaterialForge supports named scenarios (e.g., `diamond-like`, `conductor`, `heat-shield`) and three difficulty levels:
 
 | Difficulty | Tolerance | Cost Budget | Max Steps |
 |------------|-----------|-------------|-----------|
 | Easy | 20 | 120 | 64 |
 | Medium | 10 | 80 | 50 |
 | Hard | 5 | 60 | 40 |
-
-### Named Scenarios
-
-- **diamond-like** — High hardness (90), low elasticity
-- **conductor** — High conductivity (90), low thermal resistance
-- **heat-shield** — High thermal resistance (90), low conductivity
-- **flexible-polymer** — High elasticity (85), low hardness
-- **balanced-alloy** — Balanced properties (~50 each)
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/reset` | POST | Reset environment (accepts `difficulty`, `scenario_name`) |
-| `/step` | POST | Execute an action |
-| `/state` | GET | Get current environment state |
-| `/schema` | GET | Action/observation JSON schemas |
-| `/health` | GET | Health check |
-| `/ws` | WS | WebSocket for persistent sessions |
-| `/docs` | GET | Swagger UI |
 
 ## Links
 

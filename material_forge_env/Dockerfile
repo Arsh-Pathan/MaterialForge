@@ -71,6 +71,11 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
+# Ensure README is visible to the OpenEnv playground
+# It looks for /app/README.md or ENV_README_PATH
+RUN cp /app/env/README.md /app/README.md
+ENV ENV_README_PATH=/app/README.md
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
