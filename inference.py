@@ -56,6 +56,7 @@ from material_forge_env import MaterialForgeAction, MaterialForgeEnv
 # Configuration
 # ---------------------------------------------------------------------------
 IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "material-forge-env:latest")
+SPACE_URL = os.getenv("SPACE_URL")  # e.g. https://ArshPathan-material-forge-env.hf.space
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
@@ -311,7 +312,11 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
 async def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
-    env = await MaterialForgeEnv.from_docker_image(IMAGE_NAME)
+    if SPACE_URL:
+        env = MaterialForgeEnv(base_url=SPACE_URL)
+        await env.connect()
+    else:
+        env = await MaterialForgeEnv.from_docker_image(IMAGE_NAME)
 
     try:
         scores = []
