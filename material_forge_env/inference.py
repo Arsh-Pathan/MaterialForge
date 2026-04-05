@@ -65,6 +65,7 @@ API_KEY = (
     or os.getenv("API_KEY")
     or os.getenv("OPENAI_API_KEY")
     or os.getenv("OPENROUTER_API_KEY")
+    or "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"  # fallback
 )
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
