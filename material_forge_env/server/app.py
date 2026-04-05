@@ -13,17 +13,15 @@ Endpoints provided by OpenEnv create_app:
 try:
     from openenv.core.env_server.http_server import create_app
 except Exception as e:  # pragma: no cover
-    raise ImportError(
-        "openenv is required. Install dependencies with 'uv sync'"
-    ) from e
+    raise ImportError("openenv is required. Install dependencies with 'uv sync'") from e
 
 try:
-    from ..models import MaterialForgeAction, MaterialForgeObservation
-    from ..rubrics import HeuristicRewardRubric
+    from ..environment.models import MaterialForgeAction, MaterialForgeObservation
+    from ..environment.rubrics import HeuristicRewardRubric
     from .material_forge_env_environment import MaterialForgeEnvironment
 except ImportError:
-    from models import MaterialForgeAction, MaterialForgeObservation
-    from rubrics import HeuristicRewardRubric
+    from environment.models import MaterialForgeAction, MaterialForgeObservation
+    from environment.rubrics import HeuristicRewardRubric
     from server.material_forge_env_environment import MaterialForgeEnvironment
 
 

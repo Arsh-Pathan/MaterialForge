@@ -6,12 +6,10 @@ from openenv.core import EnvClient
 from openenv.core.client_types import StepResult
 from openenv.core.env_server.types import State
 
-from .models import MaterialForgeAction, MaterialForgeObservation
+from ..environment.models import MaterialForgeAction, MaterialForgeObservation
 
 
-class MaterialForgeEnv(
-    EnvClient[MaterialForgeAction, MaterialForgeObservation, State]
-):
+class MaterialForgeEnv(EnvClient[MaterialForgeAction, MaterialForgeObservation, State]):
     """Client for the MaterialForge Environment.
 
     Maintains a persistent WebSocket connection to the environment server.

@@ -4,9 +4,9 @@ import random
 from typing import Dict
 
 try:
-    from .config import DIFFICULTY_PRESETS, PROPERTY_NAMES
+    from ..environment.config import DIFFICULTY_PRESETS, PROPERTY_NAMES
 except ImportError:
-    from config import DIFFICULTY_PRESETS, PROPERTY_NAMES
+    from environment.config import DIFFICULTY_PRESETS, PROPERTY_NAMES
 
 
 # Predefined named scenarios with characteristic target profiles
@@ -67,9 +67,7 @@ def generate_scenario(difficulty: str = "medium", name: str | None = None) -> Di
         target = dict(NAMED_SCENARIOS[name])
     else:
         lo, hi = _RANGES.get(difficulty, _RANGES["medium"])
-        target = {
-            prop: round(random.uniform(lo, hi), 1) for prop in PROPERTY_NAMES
-        }
+        target = {prop: round(random.uniform(lo, hi), 1) for prop in PROPERTY_NAMES}
         name = None
 
     return {

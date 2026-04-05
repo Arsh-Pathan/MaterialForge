@@ -11,27 +11,27 @@ from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
 
 try:
-    from ..config import PROPERTY_NAMES
-    from ..lattice import Lattice
-    from ..models import MaterialForgeAction, MaterialForgeObservation
-    from ..physics import (
+    from ..environment.config import PROPERTY_NAMES
+    from ..environment.lattice import Lattice
+    from ..environment.models import MaterialForgeAction, MaterialForgeObservation
+    from ..environment.physics import (
         classify_phase,
         compute_lattice_quality,
         compute_stability,
         estimate_properties,
     )
-    from ..scenarios import generate_scenario
+    from ..scenarios.scenarios import generate_scenario
 except ImportError:
-    from config import PROPERTY_NAMES
-    from lattice import Lattice
-    from models import MaterialForgeAction, MaterialForgeObservation
-    from physics import (
+    from environment.config import PROPERTY_NAMES
+    from environment.lattice import Lattice
+    from environment.models import MaterialForgeAction, MaterialForgeObservation
+    from environment.physics import (
         classify_phase,
         compute_lattice_quality,
         compute_stability,
         estimate_properties,
     )
-    from scenarios import generate_scenario
+    from scenarios.scenarios import generate_scenario
 
 
 class MaterialForgeEnvironment(Environment):
@@ -153,7 +153,8 @@ class MaterialForgeEnvironment(Environment):
         # All properties within tolerance
         if self._lattice.atom_count() > 0:
             all_within = all(
-                abs(properties.get(p, 0.0) - self._target.get(p, 0.0)) <= self._tolerance
+                abs(properties.get(p, 0.0) - self._target.get(p, 0.0))
+                <= self._tolerance
                 for p in PROPERTY_NAMES
             )
             if all_within:
