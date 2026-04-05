@@ -25,12 +25,14 @@ except ImportError:
         from environment.rubrics import HeuristicRewardRubric
         from material_forge_env_environment import MaterialForgeEnvironment
     except ImportError:
-        from server.models import (
+        from material_forge_env.models import (
             MaterialForgeAction,
             MaterialForgeObservation,
         )
-        from server.environment.rubrics import HeuristicRewardRubric
-        from server.material_forge_env_environment import MaterialForgeEnvironment
+        from material_forge_env.environment.rubrics import HeuristicRewardRubric
+        from material_forge_env.server.material_forge_env_environment import (
+            MaterialForgeEnvironment,
+        )
 
 
 def _env_factory():
