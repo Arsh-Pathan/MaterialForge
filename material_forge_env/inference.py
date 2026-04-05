@@ -56,11 +56,18 @@ from material_forge_env import MaterialForgeAction, MaterialForgeEnv
 # Configuration
 # ---------------------------------------------------------------------------
 IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "material-forge-env:latest")
-SPACE_URL = os.getenv("SPACE_URL")  # e.g. https://ArshPathan-material-forge-env.hf.space
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
+SPACE_URL = os.getenv(
+    "SPACE_URL"
+)  # e.g. https://ArshPathan-material-forge-env.hf.space
+API_KEY = (
+    os.getenv("HF_TOKEN")
+    or os.getenv("API_KEY")
+    or os.getenv("OPENAI_API_KEY")
+    or os.getenv("OPENROUTER_API_KEY")
+)
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/llama-3.3-70b-instruct")
 BENCHMARK = "material_forge_env"
 
 # The 3 benchmark tasks — deterministic named scenarios at medium difficulty
@@ -78,11 +85,14 @@ SUCCESS_THRESHOLD = 0.3  # score >= this is considered success
 # Logging helpers (mandatory stdout format)
 # ---------------------------------------------------------------------------
 
+
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
 
-def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+def log_step(
+    step: int, action: str, reward: float, done: bool, error: Optional[str]
+) -> None:
     error_val = error if error else "null"
     done_val = str(done).lower()
     print(
@@ -109,19 +119,24 @@ You are an expert materials scientist designing atomic crystal structures.
 You are interacting with MaterialForge, an 8x8 lattice grid environment. Your goal
 is to place atoms on the grid so the resulting material's properties match the target.
 
-ATOM TYPES:
-  A (Metal)     — cost 8  — strong in hardness (0.85)
-  B (Conductor) — cost 6  — strong in conductivity (0.90)
-  C (Ceramic)   — cost 4  — strong in thermal_resistance (0.85)
-  P (Polymer)   — cost 2  — strong in elasticity (0.85)
+ATOM TYPES (choose based on which property you need to increase):
+  A (Metal)     — cost 8  — BEST for hardness, also helps conductivity
+  B (Conductor) — cost 6  — BEST for conductivity, avoid if hardness already too high
+  C (Ceramic)   — cost 4  — BEST for thermal_resistance
+  P (Polymer)   — cost 2  — BEST for elasticity
+
+DECISION RULE:
+  - If hardness gap is largest → use atom A
+  - If conductivity gap is largest → use atom B
+  - If thermal_resistance gap is largest → use atom C
+  - If elasticity gap is largest → use atom P
 
 ACTIONS (one per turn):
-  place   row col atom — place atom on an empty cell
+  place   row col atom — place atom on an empty cell (most common)
   replace row col atom — swap an existing atom for a different type
   remove  row col      — remove an atom from the grid
 
 PROPERTIES (0-100 scale): hardness, conductivity, thermal_resistance, elasticity
-The physics engine considers atom fractions, neighbor bonding, density, and symmetry.
 
 STRATEGY TIPS:
 - Cluster same-type atoms together for bonding bonuses.
@@ -129,6 +144,7 @@ STRATEGY TIPS:
 - Spread atoms across quadrants for lattice quality.
 - Stay within the cost budget.
 - Crystalline phase (repeating patterns) gives a phase bonus.
+- FOCUS on the property with the BIGGEST gap to target.
 
 Respond with ONLY a valid JSON object on a single line:
 {"action_type": "place", "row": 0, "col": 0, "atom": "A"}
@@ -193,9 +209,9 @@ def parse_llm_action(text: str) -> Optional[MaterialForgeAction]:
 
 
 def get_action_from_llm(
-        client: OpenAI,
-        obs,
-        history: List[Dict],
+    client: OpenAI,
+    obs,
+    history: List[Dict],
 ) -> MaterialForgeAction:
     """Query the LLM for the next action given the current observation."""
     user_prompt = format_observation(obs)
@@ -219,7 +235,9 @@ def get_action_from_llm(
             if action is not None:
                 return action
         except Exception as exc:
-            print(f"[DEBUG] LLM request failed (attempt {attempt + 1}): {exc}", flush=True)
+            print(
+                f"[DEBUG] LLM request failed (attempt {attempt + 1}): {exc}", flush=True
+            )
 
     # Fallback: place a cheap polymer atom at a random empty position
     return MaterialForgeAction(action_type="place", row=0, col=0, atom="P")
@@ -235,6 +253,7 @@ def action_str(action: MaterialForgeAction) -> str:
 # ---------------------------------------------------------------------------
 # Run a single task (episode)
 # ---------------------------------------------------------------------------
+
 
 async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
     """Run one episode for a named scenario. Returns the final score in [0, 1]."""
@@ -263,12 +282,19 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
 
             # Record in conversation history
             history.append({"role": "user", "content": format_observation(obs)})
-            history.append({"role": "assistant", "content": json.dumps({
-                "action_type": action.action_type,
-                "row": action.row,
-                "col": action.col,
-                "atom": action.atom,
-            })})
+            history.append(
+                {
+                    "role": "assistant",
+                    "content": json.dumps(
+                        {
+                            "action_type": action.action_type,
+                            "row": action.row,
+                            "col": action.col,
+                            "atom": action.atom,
+                        }
+                    ),
+                }
+            )
 
             result = await env.step(action)
             obs = result.observation
@@ -309,6 +335,7 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
 # Main
 # ---------------------------------------------------------------------------
 
+
 async def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
@@ -325,7 +352,10 @@ async def main() -> None:
             scores.append(score)
 
         avg = sum(scores) / len(scores) if scores else 0.0
-        print(f"\n[SUMMARY] tasks={len(TASKS)} avg_score={avg:.3f} scores={','.join(f'{s:.3f}' for s in scores)}", flush=True)
+        print(
+            f"\n[SUMMARY] tasks={len(TASKS)} avg_score={avg:.3f} scores={','.join(f'{s:.3f}' for s in scores)}",
+            flush=True,
+        )
 
     finally:
         try:
