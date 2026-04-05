@@ -116,43 +116,16 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT = textwrap.dedent("""\
-You are an expert materials scientist designing atomic crystal structures.
+You are a materials scientist. Respond with ONLY valid JSON - no text, no explanation.
 
-You are interacting with MaterialForge, an 8x8 lattice grid environment. Your goal
-is to place atoms on the grid so the resulting material's properties match the target.
+ATOM TYPES:
+  A for hardness, B for conductivity, C for thermal_resistance, P for elasticity
 
-ATOM TYPES (choose based on which property you need to increase):
-  A (Metal)     — cost 8  — BEST for hardness, also helps conductivity
-  B (Conductor) — cost 6  — BEST for conductivity, avoid if hardness already too high
-  C (Ceramic)   — cost 4  — BEST for thermal_resistance
-  P (Polymer)   — cost 2  — BEST for elasticity
+RULES:
+- place: {"action_type": "place", "row": 0-7, "col": 0-7, "atom": "A|B|C|P"}
+- Use empty cells only for place
 
-DECISION RULE:
-  - If hardness gap is largest → use atom A
-  - If conductivity gap is largest → use atom B
-  - If thermal_resistance gap is largest → use atom C
-  - If elasticity gap is largest → use atom P
-
-ACTIONS (one per turn):
-  place   row col atom — place atom on an empty cell (most common)
-  replace row col atom — swap an existing atom for a different type
-  remove  row col      — remove an atom from the grid
-
-PROPERTIES (0-100 scale): hardness, conductivity, thermal_resistance, elasticity
-
-STRATEGY TIPS:
-- Cluster same-type atoms together for bonding bonuses.
-- Maintain symmetry for stability bonus.
-- Spread atoms across quadrants for lattice quality.
-- Stay within the cost budget.
-- Crystalline phase (repeating patterns) gives a phase bonus.
-- FOCUS on the property with the BIGGEST gap to target.
-
-Respond with ONLY a valid JSON object on a single line:
-{"action_type": "place", "row": 0, "col": 0, "atom": "A"}
-
-Do NOT include any other text, explanation, or markdown. Just the JSON object.
-""")
+Respond ONLY with JSON on one line: {"action_type": "place", "row": 0, "col": 0, "atom": "A"}""")
 
 
 def format_observation(obs) -> str:
