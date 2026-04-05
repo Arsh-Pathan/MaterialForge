@@ -146,6 +146,20 @@ def format_observation(obs) -> str:
         gaps[k] = obs.target[k] - obs.current_properties.get(k, 0.0)
     gaps_str = ", ".join(f"{k}: {v:+.1f}" for k, v in gaps.items())
 
+    # Find empty cells for the LLM
+    empty_cells = [(r, c) for r in range(8) for c in range(8) if obs.grid[r][c] == "."]
+    empty_str = ", ".join(f"({r},{c})" for r, c in empty_cells[:16])  # Limit to 16
+
+    # Worst gap
+    worst = max(gaps, key=lambda k: abs(gaps[k]))
+    atom_map = {
+        "hardness": "A",
+        "conductivity": "B",
+        "thermal_resistance": "C",
+        "elasticity": "P",
+    }
+    suggested_atom = atom_map.get(worst, "A")
+
     return textwrap.dedent(f"""\
 Step {obs.step_number}/{obs.max_steps} | Cost: {obs.total_cost:.0f}/{obs.cost_budget:.0f} | Phase: {obs.phase}
 
@@ -153,12 +167,15 @@ TARGET:  {target_str}
 CURRENT: {current_str}
 GAP:     {gaps_str}
 
+Worst gap: {worst} → use atom {suggested_atom}
+
+EMPTY CELLS (use these only): {empty_str}
 Grid:
 {grid_str}
 
 Score breakdown: {json.dumps(obs.score_breakdown)}
 
-Choose your next action (JSON only):""")
+Respond ONLY with JSON for an empty cell:""")
 
 
 def parse_llm_action(text: str) -> Optional[MaterialForgeAction]:
