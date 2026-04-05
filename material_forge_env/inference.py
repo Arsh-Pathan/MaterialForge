@@ -140,17 +140,11 @@ def format_observation(obs) -> str:
     target_str = ", ".join(f"{k}: {v:.1f}" for k, v in obs.target.items())
     current_str = ", ".join(f"{k}: {v:.1f}" for k, v in obs.current_properties.items())
 
-    # Compute per-property gaps
     gaps = {}
     for k in obs.target:
         gaps[k] = obs.target[k] - obs.current_properties.get(k, 0.0)
     gaps_str = ", ".join(f"{k}: {v:+.1f}" for k, v in gaps.items())
 
-    # Find empty cells for the LLM
-    empty_cells = [(r, c) for r in range(8) for c in range(8) if obs.grid[r][c] == "."]
-    empty_str = ", ".join(f"({r},{c})" for r, c in empty_cells[:16])  # Limit to 16
-
-    # Worst gap
     worst = max(gaps, key=lambda k: abs(gaps[k]))
     atom_map = {
         "hardness": "A",
@@ -159,6 +153,14 @@ def format_observation(obs) -> str:
         "elasticity": "P",
     }
     suggested_atom = atom_map.get(worst, "A")
+
+    empty_cells = [(r, c) for r in range(8) for c in range(8) if obs.grid[r][c] == "."]
+
+    # Format as numbered options - much easier for LLM to pick
+    options = []
+    for i, (r, c) in enumerate(empty_cells[:20]):  # Limit to 20
+        options.append(f"{i + 1}: ({r},{c})")
+    empty_options = ", ".join(options)
 
     return textwrap.dedent(f"""\
 Step {obs.step_number}/{obs.max_steps} | Cost: {obs.total_cost:.0f}/{obs.cost_budget:.0f} | Phase: {obs.phase}
@@ -169,16 +171,15 @@ GAP:     {gaps_str}
 
 Worst gap: {worst} → use atom {suggested_atom}
 
-EMPTY CELLS (use these only): {empty_str}
+AVAILABLE EMPTY CELLS (pick ONE by number): {empty_options}
+
 Grid:
 {grid_str}
 
-Score breakdown: {json.dumps(obs.score_breakdown)}
-
-Respond ONLY with JSON for an empty cell:""")
+Respond with JSON using cell NUMBER: {{"cell_num": 1, "atom": "A"}}""")
 
 
-def parse_llm_action(text: str) -> Optional[MaterialForgeAction]:
+def parse_llm_action(text: str, obs) -> Optional[MaterialForgeAction]:
     """Parse the LLM's JSON response into a MaterialForgeAction."""
     if not text:
         return None
@@ -203,6 +204,24 @@ def parse_llm_action(text: str) -> Optional[MaterialForgeAction]:
 
     try:
         data = json.loads(text[start:end])
+
+        # Handle new format: cell_num (pick from list)
+        if "cell_num" in data:
+            cell_num = int(data["cell_num"])
+            empty_cells = [
+                (r, c) for r in range(8) for c in range(8) if obs.grid[r][c] == "."
+            ]
+            if 1 <= cell_num <= len(empty_cells):
+                r, c = empty_cells[cell_num - 1]
+                return MaterialForgeAction(
+                    action_type="place",
+                    row=r,
+                    col=c,
+                    atom=data.get("atom", "A"),
+                )
+            return None
+
+        # Handle old format: row, col
         return MaterialForgeAction(
             action_type=data["action_type"],
             row=int(data["row"]),
@@ -235,7 +254,7 @@ def get_action_from_llm(
                 stream=False,
             )
             text = (completion.choices[0].message.content or "").strip()
-            action = parse_llm_action(text)
+            action = parse_llm_action(text, obs)
             if action is not None:
                 # Validate: place must be on empty cell, replace on occupied
                 if action.action_type == "place":
