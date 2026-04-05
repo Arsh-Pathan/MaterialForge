@@ -234,10 +234,13 @@ def get_action_from_llm(
             text = (completion.choices[0].message.content or "").strip()
             action = parse_llm_action(text)
             if action is not None:
-                # Validate: place must be on empty cell
+                # Validate: place must be on empty cell, replace on occupied
                 if action.action_type == "place":
                     if obs.grid[action.row][action.col] != ".":
-                        continue  # Try again
+                        continue
+                elif action.action_type == "replace":
+                    if obs.grid[action.row][action.col] == ".":
+                        continue
                 return action
         except Exception as exc:
             print(
@@ -338,8 +341,8 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
                 error=error,
             )
 
-        # Score = last reward (already in [0,1] from the rubric)
-        score = rewards[-1] if rewards else 0.0
+        # Score = best reward achieved (not last reward)
+        score = max(rewards) if rewards else 0.0
         score = min(max(score, 0.0), 1.0)
         success = score >= SUCCESS_THRESHOLD
 
@@ -362,6 +365,9 @@ async def main() -> None:
 
     if SPACE_URL:
         env = MaterialForgeEnv(base_url=SPACE_URL)
+        await env.connect()
+    elif os.getenv("USE_LOCALHOST"):
+        env = MaterialForgeEnv(base_url="http://localhost:8000")
         await env.connect()
     else:
         env = await MaterialForgeEnv.from_docker_image(IMAGE_NAME)
