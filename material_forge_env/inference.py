@@ -117,20 +117,24 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 # System prompt for the LLM agent
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = """You are a materials scientist. You MUST respond with ONLY valid JSON - no text before or after.
+SYSTEM_PROMPT = """You are a materials scientist optimizing crystal structures.
 
-EXAMPLES:
-{"action_type": "place", "row": 0, "col": 0, "atom": "A"}
-{"action_type": "place", "row": 3, "col": 5, "atom": "B"}
-{"action_type": "remove", "row": 2, "col": 2}
+GOAL: Match target properties by placing atoms on an 8x8 grid.
 
-RULES:
-- Use "place" with empty cells: {"action_type": "place", "row": 0-7, "col": 0-7, "atom": "A|B|C|P"}
-- A=hardness, B=conductivity, C=thermal_resistance, P=elasticity
-- Choose atom based on worst gap to target
-- Total cost budget is 80, atom costs: A=8, B=6, C=4, P=2
+ATOM TYPES:
+- A (Metal): +hardness, +conductivity, cost=8
+- B (Conductor): +conductivity, cost=6  
+- C (Ceramic): +thermal_resistance, cost=4
+- P (Polymer): +elasticity, cost=2
 
-Respond with ONLY JSON: {"action_type": "place", "row": 0, "col": 0, "atom": "A"}"""
+STRATEGY (IMPORTANT):
+1. CLUSTER same atoms together for bonding bonus
+2. Aim for CRYSTALLINE phase (repeating patterns) for bonus
+3. Stay under cost budget (80 total)
+4. Focus on worst property gap
+
+Pick from numbered empty cells.
+Respond ONLY: {"cell_num": 1, "atom": "A"}"""
 
 
 def format_observation(obs) -> str:
@@ -170,13 +174,19 @@ CURRENT: {current_str}
 GAP:     {gaps_str}
 
 Worst gap: {worst} → use atom {suggested_atom}
+Cost budget: {obs.cost_budget:.0f}, used: {obs.total_cost:.0f}
+
+STRATEGY:
+- Place atoms NEAR same type for bonding bonus (+reward)
+- Crystalline phase = extra bonus!
+- Stay under cost budget
 
 AVAILABLE EMPTY CELLS (pick ONE by number): {empty_options}
 
 Grid:
 {grid_str}
 
-Respond with JSON using cell NUMBER: {{"cell_num": 1, "atom": "A"}}""")
+Respond with JSON: {{"cell_num": 1, "atom": "A"}}""")
 
 
 def parse_llm_action(text: str, obs) -> Optional[MaterialForgeAction]:
