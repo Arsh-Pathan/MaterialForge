@@ -163,12 +163,20 @@ Choose your next action (JSON only):""")
 
 def parse_llm_action(text: str) -> Optional[MaterialForgeAction]:
     """Parse the LLM's JSON response into a MaterialForgeAction."""
+    if not text:
+        return None
+
     text = text.strip()
-    # Strip markdown code fences if present
-    if text.startswith("```"):
-        lines = text.split("\n")
-        lines = [l for l in lines if not l.strip().startswith("```")]
-        text = "\n".join(lines).strip()
+
+    # Remove common prefixes like "Here is the JSON:"
+    text = (
+        text.replace("Here is the JSON:", "")
+        .replace("Here is the JSON", "")
+        .replace("Here's the JSON:", "")
+    )
+
+    # Strip markdown code fences
+    text = text.replace("```json", "").replace("```", "").strip()
 
     # Find the first JSON object in the response
     start = text.find("{")
