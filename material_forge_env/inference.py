@@ -121,20 +121,20 @@ SYSTEM_PROMPT = """You are a materials scientist optimizing crystal structures.
 
 GOAL: Match target properties by placing atoms on an 8x8 grid.
 
-ATOM TYPES:
-- A (Metal): +hardness, +conductivity, cost=8
-- B (Conductor): +conductivity, cost=6  
-- C (Ceramic): +thermal_resistance, cost=4
-- P (Polymer): +elasticity, cost=2
+ATOM TYPES (use CHEAP atoms first to save budget):
+- P (Polymer): cost=2, +elasticity (use first!)
+- C (Ceramic): cost=4, +thermal_resistance
+- B (Conductor): cost=6, +conductivity  
+- A (Metal): cost=8, +hardness (use LAST!)
 
-STRATEGY (IMPORTANT):
-1. CLUSTER same atoms together for bonding bonus
-2. Aim for CRYSTALLINE phase (repeating patterns) for bonus
-3. Stay under cost budget (80 total)
-4. Focus on worst property gap
+CRITICAL STRATEGY:
+1. Use P first (cost 2) - save budget for important atoms
+2. Cluster same atoms together for bonding BONUS
+3. Aim for CRYSTALLINE phase for +10% bonus
+4. Fill grid evenly - don't bunch in one area
 
 Pick from numbered empty cells.
-Respond ONLY: {"cell_num": 1, "atom": "A"}"""
+Respond ONLY: {"cell_num": 1, "atom": "P"}"""
 
 
 def format_observation(obs) -> str:
