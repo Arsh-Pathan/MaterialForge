@@ -22,7 +22,7 @@ try:
 except ImportError:
     from models import MaterialForgeAction, MaterialForgeObservation
     from environment.rubrics import HeuristicRewardRubric
-    from material_forge_env_environment import MaterialForgeEnvironment
+    from server.material_forge_env_environment import MaterialForgeEnvironment
 
 
 def _env_factory():
