@@ -6,10 +6,7 @@ from openenv.core import EnvClient
 from openenv.core.client_types import StepResult
 from openenv.core.env_server.types import State
 
-try:
-    from ..environment.models import MaterialForgeAction, MaterialForgeObservation
-except ImportError:
-    from environment.models import MaterialForgeAction, MaterialForgeObservation
+from material_forge_env.models import MaterialForgeAction, MaterialForgeObservation
 
 
 class MaterialForgeEnv(EnvClient[MaterialForgeAction, MaterialForgeObservation, State]):

@@ -5,10 +5,7 @@ from typing import Dict, List, Literal, Optional
 from openenv.core.env_server.types import Action, Observation
 from pydantic import Field
 
-try:
-    from .config import GRID_SIZE
-except ImportError:
-    from config import GRID_SIZE
+from material_forge_env.environment.config import GRID_SIZE
 
 
 class MaterialForgeAction(Action):
@@ -20,7 +17,8 @@ class MaterialForgeAction(Action):
     row: int = Field(..., ge=0, lt=GRID_SIZE, description="Row index on the grid")
     col: int = Field(..., ge=0, lt=GRID_SIZE, description="Column index on the grid")
     atom: Optional[Literal["A", "B", "C", "P"]] = Field(
-        default=None, description="Atom type (required for place/replace, ignored for remove)"
+        default=None,
+        description="Atom type (required for place/replace, ignored for remove)",
     )
 
 
@@ -40,4 +38,6 @@ class MaterialForgeObservation(Observation):
     score_breakdown: Dict[str, float] = Field(
         description="Breakdown of reward components"
     )
-    hint: Optional[str] = Field(default=None, description="Optional hint from LLM engine")
+    hint: Optional[str] = Field(
+        default=None, description="Optional hint from LLM engine"
+    )

@@ -13,7 +13,7 @@ from openenv.core.env_server.types import State
 try:
     from ..environment.config import PROPERTY_NAMES
     from ..environment.lattice import Lattice
-    from ..environment.models import MaterialForgeAction, MaterialForgeObservation
+    from ..models import MaterialForgeAction, MaterialForgeObservation
     from ..environment.physics import (
         classify_phase,
         compute_lattice_quality,
@@ -24,7 +24,7 @@ try:
 except ImportError:
     from environment.config import PROPERTY_NAMES
     from environment.lattice import Lattice
-    from environment.models import MaterialForgeAction, MaterialForgeObservation
+    from models import MaterialForgeAction, MaterialForgeObservation
     from environment.physics import (
         classify_phase,
         compute_lattice_quality,

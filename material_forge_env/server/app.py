@@ -16,16 +16,16 @@ except Exception as e:  # pragma: no cover
     raise ImportError("openenv is required. Install dependencies with 'uv sync'") from e
 
 try:
-    from ..environment.models import MaterialForgeAction, MaterialForgeObservation
+    from ..models import MaterialForgeAction, MaterialForgeObservation
     from ..environment.rubrics import HeuristicRewardRubric
     from .material_forge_env_environment import MaterialForgeEnvironment
 except ImportError:
     try:
-        from environment.models import MaterialForgeAction, MaterialForgeObservation
+        from models import MaterialForgeAction, MaterialForgeObservation
         from environment.rubrics import HeuristicRewardRubric
         from material_forge_env_environment import MaterialForgeEnvironment
     except ImportError:
-        from server.environment.models import (
+        from server.models import (
             MaterialForgeAction,
             MaterialForgeObservation,
         )
