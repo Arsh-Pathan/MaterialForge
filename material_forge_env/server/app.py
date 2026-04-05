@@ -38,6 +38,15 @@ app = create_app(
     max_concurrent_envs=4,
 )
 
+if not hasattr(app, "add_api_route"):
+    from fastapi import FastAPI
+
+    _app = FastAPI()
+    _app.add_api_route("/health", lambda: {"status": "ok"}, methods=["GET"])
+    for route in app.routes:
+        _app.routes.append(route)
+    app = _app
+
 
 def main():
     """Entry point for direct execution via uv run or python -m.
