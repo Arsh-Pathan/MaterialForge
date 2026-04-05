@@ -14,8 +14,8 @@ MANDATORY
     API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
     MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
-- The inference script must be named `inference.py` and placed in `material_forge_env/` directory.
-- Participants must use  the OpenAI Client for all LLM calls using the above variables.
+- The inference script must be named `inference.py` and placed in the root directory of the project.
+- Participants must use the OpenAI Client for all LLM calls using the above variables.
 
 STDOUT FORMAT
 - The script must emit exactly three line types to stdout, in this order:
@@ -56,9 +56,7 @@ from material_forge_env import MaterialForgeAction, MaterialForgeEnv
 # Configuration
 # ---------------------------------------------------------------------------
 IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "material-forge-env:latest")
-SPACE_URL = os.getenv(
-    "SPACE_URL"
-)  # e.g. https://ArshPathan-material-forge-env.hf.space
+SPACE_URL = os.getenv("SPACE_URL")  # e.g. https://ArshPathan-material-forge-env.hf.space
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
@@ -80,14 +78,11 @@ SUCCESS_THRESHOLD = 0.3  # score >= this is considered success
 # Logging helpers (mandatory stdout format)
 # ---------------------------------------------------------------------------
 
-
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
 
-def log_step(
-    step: int, action: str, reward: float, done: bool, error: Optional[str]
-) -> None:
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
     error_val = error if error else "null"
     done_val = str(done).lower()
     print(
@@ -198,9 +193,9 @@ def parse_llm_action(text: str) -> Optional[MaterialForgeAction]:
 
 
 def get_action_from_llm(
-    client: OpenAI,
-    obs,
-    history: List[Dict],
+        client: OpenAI,
+        obs,
+        history: List[Dict],
 ) -> MaterialForgeAction:
     """Query the LLM for the next action given the current observation."""
     user_prompt = format_observation(obs)
@@ -224,9 +219,7 @@ def get_action_from_llm(
             if action is not None:
                 return action
         except Exception as exc:
-            print(
-                f"[DEBUG] LLM request failed (attempt {attempt + 1}): {exc}", flush=True
-            )
+            print(f"[DEBUG] LLM request failed (attempt {attempt + 1}): {exc}", flush=True)
 
     # Fallback: place a cheap polymer atom at a random empty position
     return MaterialForgeAction(action_type="place", row=0, col=0, atom="P")
@@ -242,7 +235,6 @@ def action_str(action: MaterialForgeAction) -> str:
 # ---------------------------------------------------------------------------
 # Run a single task (episode)
 # ---------------------------------------------------------------------------
-
 
 async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
     """Run one episode for a named scenario. Returns the final score in [0, 1]."""
@@ -271,19 +263,12 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
 
             # Record in conversation history
             history.append({"role": "user", "content": format_observation(obs)})
-            history.append(
-                {
-                    "role": "assistant",
-                    "content": json.dumps(
-                        {
-                            "action_type": action.action_type,
-                            "row": action.row,
-                            "col": action.col,
-                            "atom": action.atom,
-                        }
-                    ),
-                }
-            )
+            history.append({"role": "assistant", "content": json.dumps({
+                "action_type": action.action_type,
+                "row": action.row,
+                "col": action.col,
+                "atom": action.atom,
+            })})
 
             result = await env.step(action)
             obs = result.observation
@@ -324,7 +309,6 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
 # Main
 # ---------------------------------------------------------------------------
 
-
 async def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
@@ -341,10 +325,7 @@ async def main() -> None:
             scores.append(score)
 
         avg = sum(scores) / len(scores) if scores else 0.0
-        print(
-            f"\n[SUMMARY] tasks={len(TASKS)} avg_score={avg:.3f} scores={','.join(f'{s:.3f}' for s in scores)}",
-            flush=True,
-        )
+        print(f"\n[SUMMARY] tasks={len(TASKS)} avg_score={avg:.3f} scores={','.join(f'{s:.3f}' for s in scores)}", flush=True)
 
     finally:
         try:

@@ -1,12 +1,10 @@
 ---
 title: MaterialForge
 emoji: 🔬
-colorFrom: indigo
+colorFrom: red
 colorTo: purple
 sdk: docker
-pinned: false
-app_port: 8000
-base_path: /web
+app_port: 7860
 tags:
   - openenv
   - reinforcement-learning
@@ -14,10 +12,9 @@ tags:
   - crystal-structure
 ---
 
-# MaterialForge
+# 🔬 MaterialForge — AI-Driven Atomic Crystal Structure Design
 
-**AI-Driven Atomic Crystal Structure Design**
-
+---
 MaterialForge is an OpenEnv reinforcement learning environment where an AI agent designs atomic crystal structures on an 8x8 lattice grid to match target material properties.
 
 Given a target specification (hardness, conductivity, thermal resistance, elasticity), the agent places, replaces, and removes atoms to construct a crystal structure that satisfies the requirements within a cost budget.
