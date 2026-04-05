@@ -69,7 +69,9 @@ API_KEY = (
 )
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/llama-3.3-70b-instruct")
+MODEL_NAME = os.getenv(
+    "MODEL_NAME", "deepseek/deepseek-chat"
+)  # Better at following instructions
 BENCHMARK = "material_forge_env"
 
 # The 3 benchmark tasks — deterministic named scenarios at medium difficulty
@@ -115,17 +117,20 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 # System prompt for the LLM agent
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = textwrap.dedent("""\
-You are a materials scientist. Respond with ONLY valid JSON - no text, no explanation.
+SYSTEM_PROMPT = """You are a materials scientist. You MUST respond with ONLY valid JSON - no text before or after.
 
-ATOM TYPES:
-  A for hardness, B for conductivity, C for thermal_resistance, P for elasticity
+EXAMPLES:
+{"action_type": "place", "row": 0, "col": 0, "atom": "A"}
+{"action_type": "place", "row": 3, "col": 5, "atom": "B"}
+{"action_type": "remove", "row": 2, "col": 2}
 
 RULES:
-- place: {"action_type": "place", "row": 0-7, "col": 0-7, "atom": "A|B|C|P"}
-- Use empty cells only for place
+- Use "place" with empty cells: {"action_type": "place", "row": 0-7, "col": 0-7, "atom": "A|B|C|P"}
+- A=hardness, B=conductivity, C=thermal_resistance, P=elasticity
+- Choose atom based on worst gap to target
+- Total cost budget is 80, atom costs: A=8, B=6, C=4, P=2
 
-Respond ONLY with JSON on one line: {"action_type": "place", "row": 0, "col": 0, "atom": "A"}""")
+Respond with ONLY JSON: {"action_type": "place", "row": 0, "col": 0, "atom": "A"}"""
 
 
 def format_observation(obs) -> str:
