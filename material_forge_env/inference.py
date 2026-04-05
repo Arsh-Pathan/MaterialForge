@@ -45,6 +45,7 @@ STDOUT FORMAT
 import asyncio
 import json
 import os
+import random
 import textwrap
 from typing import Dict, List, Optional
 
@@ -217,7 +218,6 @@ def get_action_from_llm(
     user_prompt = format_observation(obs)
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    # Include recent history for context (last 6 exchanges to fit context)
     messages.extend(history[-12:])
     messages.append({"role": "user", "content": user_prompt})
 
@@ -233,14 +233,34 @@ def get_action_from_llm(
             text = (completion.choices[0].message.content or "").strip()
             action = parse_llm_action(text)
             if action is not None:
+                # Validate: place must be on empty cell
+                if action.action_type == "place":
+                    if obs.grid[action.row][action.col] != ".":
+                        continue  # Try again
                 return action
         except Exception as exc:
             print(
                 f"[DEBUG] LLM request failed (attempt {attempt + 1}): {exc}", flush=True
             )
 
-    # Fallback: place a cheap polymer atom at a random empty position
-    return MaterialForgeAction(action_type="place", row=0, col=0, atom="P")
+    # Fallback: smart placement on empty cell
+    empty_cells = [(r, c) for r in range(8) for c in range(8) if obs.grid[r][c] == "."]
+    if empty_cells:
+        gaps = {
+            k: obs.target[k] - obs.current_properties.get(k, 0.0) for k in obs.target
+        }
+        worst = max(gaps, key=lambda k: abs(gaps[k]))
+        atom_map = {
+            "hardness": "A",
+            "conductivity": "B",
+            "thermal_resistance": "C",
+            "elasticity": "P",
+        }
+        atom = atom_map.get(worst, "P")
+        row, col = random.choice(empty_cells)
+        return MaterialForgeAction(action_type="place", row=row, col=col, atom=atom)
+
+    return MaterialForgeAction(action_type="remove", row=0, col=0, atom=None)
 
 
 def action_str(action: MaterialForgeAction) -> str:
