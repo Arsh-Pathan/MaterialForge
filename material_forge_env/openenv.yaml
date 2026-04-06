@@ -5,3 +5,88 @@ runtime: fastapi
 app: server.app:app
 port: 8000
 
+description: >
+  AI-driven crystal structure design on an 8x8 lattice grid.
+  Place atoms (Metal, Conductor, Ceramic, Polymer) to match target material
+  properties: hardness, conductivity, thermal resistance, and elasticity.
+
+tasks:
+  - name: diamond-like
+    description: >
+      Design a diamond-like crystal with high hardness and thermal resistance.
+      Target: hardness ~80, thermal_resistance ~70, moderate other properties.
+    difficulty: medium
+    seed: 42
+    max_steps: 50
+    grading:
+      metric: best_reward
+      thresholds:
+        pass: 0.30
+        good: 0.55
+        excellent: 0.75
+    baseline:
+      random_agent: 0.08
+      heuristic_agent: 0.45
+      llm_agent: 0.72
+
+  - name: conductor
+    description: >
+      Design an electrical conductor with high conductivity and elasticity.
+      Target: conductivity ~85, elasticity ~60, low hardness acceptable.
+    difficulty: medium
+    seed: 43
+    max_steps: 50
+    grading:
+      metric: best_reward
+      thresholds:
+        pass: 0.30
+        good: 0.55
+        excellent: 0.75
+    baseline:
+      random_agent: 0.07
+      heuristic_agent: 0.42
+      llm_agent: 0.68
+
+  - name: heat-shield
+    description: >
+      Design a thermal barrier with maximum thermal resistance.
+      Target: thermal_resistance ~90, hardness ~50, balanced other properties.
+    difficulty: medium
+    seed: 44
+    max_steps: 50
+    grading:
+      metric: best_reward
+      thresholds:
+        pass: 0.30
+        good: 0.55
+        excellent: 0.75
+    baseline:
+      random_agent: 0.06
+      heuristic_agent: 0.40
+      llm_agent: 0.70
+
+reward_formula: >
+  reward = 0.50 * property_match + 0.25 * stability + 0.15 * lattice_quality
+           + 0.10 * phase_bonus - cost_penalty
+
+action_space:
+  type: discrete
+  actions:
+    - place: "Place atom at (row, col) — costs vary by atom type"
+    - replace: "Replace existing atom at (row, col) with a different type"
+    - remove: "Remove atom from (row, col) — frees budget"
+
+observation_space:
+  grid: "8x8 lattice with atom types (A/B/C/P) or empty (.)"
+  target: "Dict of 4 target property values (0-100)"
+  current_properties: "Dict of 4 current computed properties"
+  phase: "Crystal phase: crystalline, polycrystalline, or amorphous"
+  total_cost: "Cumulative cost of placed atoms"
+  cost_budget: "Maximum allowed cost"
+  score_breakdown: "Component scores (stability, lattice_quality)"
+
+atom_types:
+  A: { name: Metal, cost: 8, primary: hardness }
+  B: { name: Conductor, cost: 6, primary: conductivity }
+  C: { name: Ceramic, cost: 4, primary: thermal_resistance }
+  P: { name: Polymer, cost: 2, primary: elasticity }

@@ -15,14 +15,18 @@ try:
 except Exception as e:  # pragma: no cover
     raise ImportError("openenv is required. Install dependencies with 'uv sync'") from e
 
+import os
+
 try:
     from ..models import MaterialForgeAction, MaterialForgeObservation
     from ..environment.rubrics import HeuristicRewardRubric
     from .material_forge_env_environment import MaterialForgeEnvironment
+    from .gradio_ui import build_gradio_frontend
 except ImportError:
     from models import MaterialForgeAction, MaterialForgeObservation
     from environment.rubrics import HeuristicRewardRubric
     from server.material_forge_env_environment import MaterialForgeEnvironment
+    from server.gradio_ui import build_gradio_frontend
 
 
 def _env_factory():
@@ -30,12 +34,23 @@ def _env_factory():
     return MaterialForgeEnvironment(rubric=HeuristicRewardRubric())
 
 
+# Enable Gradio web interface when ENABLE_WEB_INTERFACE=true or on HF Spaces
+_enable_web = os.getenv("ENABLE_WEB_INTERFACE", "").lower() in ("true", "1", "yes")
+_on_hf_spaces = os.getenv("SPACE_ID") is not None
+
+_create_kwargs = dict(
+    env_name="material_forge_env",
+    max_concurrent_envs=4,
+)
+
+if _enable_web or _on_hf_spaces:
+    _create_kwargs["gradio_builder"] = build_gradio_frontend
+
 app = create_app(
     _env_factory,
     MaterialForgeAction,
     MaterialForgeObservation,
-    env_name="material_forge_env",
-    max_concurrent_envs=4,
+    **_create_kwargs,
 )
 
 if not hasattr(app, "add_api_route"):
