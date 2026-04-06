@@ -3,30 +3,32 @@
 Endpoints provided by OpenEnv create_app:
     - POST /reset: Reset the environment
     - POST /step: Execute an action
-    - GET /state: Get current environment state
-    - GET /schema: Get action/observation schemas
-    - GET /health: Health check
-    - WS /ws: WebSocket endpoint for persistent sessions
-    - GET /docs: Swagger UI
+    - GET  /state: Get current environment state
+    - GET  /schema: Get action/observation schemas
+    - GET  /health: Health check
+    - WS   /ws: WebSocket endpoint for persistent sessions
+    - GET  /docs: Swagger UI
+
+Custom additions:
+    - GET  /ui → serves the HTML/CSS/JS visualisation dashboard
 """
+
+import os
+from pathlib import Path
 
 try:
     from openenv.core.env_server.http_server import create_app
 except Exception as e:  # pragma: no cover
     raise ImportError("openenv is required. Install dependencies with 'uv sync'") from e
 
-import os
-
 try:
     from ..models import MaterialForgeAction, MaterialForgeObservation
     from ..environment.rubrics import HeuristicRewardRubric
     from .material_forge_env_environment import MaterialForgeEnvironment
-    from .gradio_ui import build_gradio_frontend
 except ImportError:
     from models import MaterialForgeAction, MaterialForgeObservation
     from environment.rubrics import HeuristicRewardRubric
     from server.material_forge_env_environment import MaterialForgeEnvironment
-    from server.gradio_ui import build_gradio_frontend
 
 
 def _env_factory():
@@ -34,23 +36,12 @@ def _env_factory():
     return MaterialForgeEnvironment(rubric=HeuristicRewardRubric())
 
 
-# Enable Gradio web interface when ENABLE_WEB_INTERFACE=true or on HF Spaces
-_enable_web = os.getenv("ENABLE_WEB_INTERFACE", "").lower() in ("true", "1", "yes")
-_on_hf_spaces = os.getenv("SPACE_ID") is not None
-
-_create_kwargs = dict(
-    env_name="material_forge_env",
-    max_concurrent_envs=4,
-)
-
-if _enable_web or _on_hf_spaces:
-    _create_kwargs["gradio_builder"] = build_gradio_frontend
-
 app = create_app(
     _env_factory,
     MaterialForgeAction,
     MaterialForgeObservation,
-    **_create_kwargs,
+    env_name="material_forge_env",
+    max_concurrent_envs=4,
 )
 
 if not hasattr(app, "add_api_route"):
@@ -61,6 +52,21 @@ if not hasattr(app, "add_api_route"):
     for route in app.routes:
         _app.routes.append(route)
     app = _app
+
+# ── Mount the HTML/CSS/JS visualisation dashboard ──────────────────────────
+# Available at  /ui  (also aliased to /ui/ and /ui/index.html)
+_STATIC_DIR = Path(__file__).parent / "static"
+if _STATIC_DIR.is_dir():
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
+
+    # Serve the whole static folder
+    app.mount("/ui", StaticFiles(directory=str(_STATIC_DIR), html=True), name="ui")
+
+    # Convenience redirect: root → /ui
+    @app.get("/", include_in_schema=False)
+    def root_redirect():
+        return FileResponse(str(_STATIC_DIR / "index.html"))
 
 
 def main():

@@ -15,11 +15,9 @@ description = "Material Forge Env environment for OpenEnv"
 requires-python = ">=3.10"
 dependencies = [
     # Core OpenEnv runtime (provides FastAPI server + HTTP client types)
-    # install from github
-    # "openenv-core[core] @ git+https://github.com/meta-pytorch/OpenEnv.git",
     "openenv-core[core]>=0.2.2",
-    "matplotlib>=3.7.0",
-    "numpy>=1.24.0",
+    # aiofiles is required by FastAPI's StaticFiles for async file serving
+    "aiofiles>=23.0.0",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +35,9 @@ server = "material_forge_env.server.app:main"
 include-package-data = true
 packages = ["material_forge_env", "material_forge_env.server", "material_forge_env.environment", "material_forge_env.scenarios"]
 package-dir = { "material_forge_env" = ".", "material_forge_env.server" = "server", "material_forge_env.environment" = "environment", "material_forge_env.scenarios" = "scenarios" }
+
+[tool.setuptools.package-data]
+"material_forge_env.server" = ["static/*", "static/**/*"]
 
 [dependency-groups]
 dev = [
