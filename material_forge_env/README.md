@@ -38,7 +38,7 @@ from material_forge_env import MaterialForgeEnv
 env = MaterialForgeEnv(base_url="https://ArshPathan-material-forge-env.hf.space")
 
 # Alternatively, connect to a local server
-# env = MaterialForgeEnv(base_url="http://localhost:8000")
+# env = MaterialForgeEnv(base_url="http://localhost:7860")
 
 with env:
     result = env.reset()

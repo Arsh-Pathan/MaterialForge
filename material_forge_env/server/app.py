@@ -53,17 +53,22 @@ if not hasattr(app, "add_api_route"):
         _app.routes.append(route)
     app = _app
 
-# ── Mount the HTML/CSS/JS visualisation dashboard ──────────────────────────
-# Available at  /ui  (also aliased to /ui/ and /ui/index.html)
+# ── Professional Routing & Static Mounting ──────────────────────────────
+# Matches Gridmind-RL pattern: /playground, /api (docs), /
 _STATIC_DIR = Path(__file__).parent / "static"
 if _STATIC_DIR.is_dir():
-    from fastapi.responses import FileResponse
+    from fastapi.responses import FileResponse, RedirectResponse
     from fastapi.staticfiles import StaticFiles
 
-    # Serve the whole static folder
-    app.mount("/ui", StaticFiles(directory=str(_STATIC_DIR), html=True), name="ui")
+    # Serve the whole static folder at /playground
+    app.mount("/playground", StaticFiles(directory=str(_STATIC_DIR), html=True), name="playground")
 
-    # Convenience redirect: root → /ui
+    # API Alias: /api → /docs
+    @app.get("/api", include_in_schema=False)
+    def api_docs_redirect():
+        return RedirectResponse(url="/docs")
+
+    # Convenience redirect: root → /playground
     @app.get("/", include_in_schema=False)
     def root_redirect():
         return FileResponse(str(_STATIC_DIR / "index.html"))
@@ -82,7 +87,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--port", type=int, default=int(os.getenv("PORT", 7860)))
     args = parser.parse_args()
     uvicorn.run(app, host=args.host, port=args.port)
 

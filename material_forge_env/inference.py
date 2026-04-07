@@ -398,7 +398,7 @@ async def main() -> None:
         env = MaterialForgeEnv(base_url=SPACE_URL)
         await env.connect()
     elif os.getenv("USE_LOCALHOST"):
-        env = MaterialForgeEnv(base_url="http://localhost:8000")
+        env = MaterialForgeEnv(base_url="http://localhost:7860")
         await env.connect()
     else:
         env = await MaterialForgeEnv.from_docker_image(IMAGE_NAME)
