@@ -130,7 +130,7 @@ class MaterialForgeApp {
       this.els.apiBase.textContent = window.location.host;
       const h = await fetch(this.API_BASE + '/health').then(r => r.json());
       this.els.statusDot.classList.remove('offline');
-      this.els.statusText.textContent = h.status === 'ok' ? 'API Online' : 'Warning';
+      this.els.statusText.textContent = (h.status === 'ok' || h.status === 'healthy') ? 'API Online' : 'Warning';
       return true;
     } catch {
       this.els.statusDot.classList.add('offline');
@@ -181,7 +181,7 @@ class MaterialForgeApp {
     };
 
     try {
-      const result = await this.apiCall('/step', action);
+      const result = await this.apiCall('/step', { action });
       const obs    = result.observation ?? result;
       const reward = result.reward ?? obs.reward ?? 0;
       const done   = result.done   ?? obs.done   ?? false;
