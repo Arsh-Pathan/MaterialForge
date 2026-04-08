@@ -68,7 +68,12 @@ if _STATIC_DIR.is_dir():
     def api_docs_redirect():
         return RedirectResponse(url="/docs")
 
-    # Convenience redirect: root → /playground
+    # Force-remove any existing root route (OpenEnv's default playground)
+    for i in range(len(app.routes) - 1, -1, -1):
+        if getattr(app.routes[i], "path", None) == "/":
+            app.routes.pop(i)
+
+    # Convenience redirect: root → /playground UI
     @app.get("/", include_in_schema=False)
     def root_redirect():
         return FileResponse(str(_STATIC_DIR / "index.html"))
