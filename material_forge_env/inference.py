@@ -61,6 +61,7 @@ TASKS = [
 TEMPERATURE = 0.1
 MAX_TOKENS = 160
 SUCCESS_THRESHOLD = 0.3
+PROXY_PROBE_MAX_TOKENS = 8
 
 PROPERTY_TO_ATOM = {
     "hardness": "A",
@@ -103,20 +104,12 @@ def log_step(
     )
 
 
-def log_end(success: bool, steps: int, rewards: List[float]) -> None:
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{reward:.2f}" for reward in rewards)
     print(
-        f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
         flush=True,
     )
-
-
-def require_env(name: str) -> str:
-    """Return a required environment variable or raise a clear error."""
-    value = os.environ.get(name)
-    if value:
-        return value
-    raise RuntimeError(f"Missing required environment variable: {name}")
 
 
 SYSTEM_PROMPT = """You are a baseline agent for a crystal-design OpenEnv benchmark.
@@ -500,6 +493,21 @@ async def choose_action_with_llm(
     return candidates[0].action
 
 
+async def warm_up_llm_proxy(client: OpenAI) -> None:
+    """Force one request through the injected LiteLLM proxy before tasks start."""
+    await asyncio.to_thread(
+        client.chat.completions.create,
+        model=MODEL_NAME,
+        messages=[
+            {"role": "system", "content": "Return JSON only."},
+            {"role": "user", "content": '{"candidate_id": 1}'},
+        ],
+        temperature=0.0,
+        max_tokens=PROXY_PROBE_MAX_TOKENS,
+        stream=False,
+    )
+
+
 async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
     """Run one benchmark episode and return the best reward reached."""
     rewards: List[float] = []
@@ -553,23 +561,28 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
     score = max(rewards) if rewards else 0.0
     score = min(max(score, 0.0), 1.0)
     success = score >= SUCCESS_THRESHOLD
-    log_end(success=success, steps=steps_taken, rewards=rewards)
+    log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
     return score
 
 
 async def main() -> None:
     """Run the benchmark tasks using a simple LLM baseline policy."""
     try:
-        api_base_url = require_env("API_BASE_URL")
-        api_key = require_env("API_KEY")
-    except RuntimeError as exc:
+        client = OpenAI(
+            base_url=os.environ["API_BASE_URL"],
+            api_key=os.environ["API_KEY"],
+        )
+    except KeyError as exc:
         print(f"[DEBUG] {exc}", flush=True)
         for task in TASKS:
             log_start(task=task["name"], env=BENCHMARK, model=MODEL_NAME)
-            log_end(success=False, steps=0, rewards=[])
+            log_end(success=False, steps=0, score=0.0, rewards=[])
         return
 
-    client = OpenAI(base_url=api_base_url, api_key=api_key)
+    try:
+        await warm_up_llm_proxy(client)
+    except Exception as exc:
+        print(f"[DEBUG] LLM proxy warm-up failed: {exc}", flush=True)
 
     try:
         if SPACE_URL:
@@ -589,7 +602,7 @@ async def main() -> None:
         # Emit minimal structured output so validator can parse results
         for task in TASKS:
             log_start(task=task["name"], env=BENCHMARK, model=MODEL_NAME)
-            log_end(success=False, steps=0, rewards=[])
+            log_end(success=False, steps=0, score=0.0, rewards=[])
 
         return
 
