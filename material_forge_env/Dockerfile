@@ -76,10 +76,14 @@ ENV PYTHONPATH="/app/env:$PYTHONPATH"
 RUN cp /app/env/README.md /app/README.md
 ENV ENV_README_PATH=/app/README.md
 
+# OpenEnv's LocalDockerProvider maps host:8000, so the server must listen on 8000
+ENV PORT=8000
+EXPOSE 8000
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:7860/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the FastAPI server
-# The module path is constructed to work with the /app/env structure
-CMD ["sh", "-c", "cd /app/env && uvicorn server.app:app --host 0.0.0.0 --port 7860"]
+# OpenEnv's LocalDockerProvider hardcodes -p <host>:8000, so we MUST listen on 8000
+CMD ["sh", "-c", "cd /app/env && uvicorn server.app:app --host 0.0.0.0 --port 8000"]
