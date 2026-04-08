@@ -35,6 +35,7 @@ class TestGenerateScenario:
         s = generate_scenario("medium")
         assert s["tolerance"] == 10
         assert s["cost_budget"] == 80
+        assert s["max_steps"] == 50
 
     def test_hard_preset(self):
         s = generate_scenario("hard")

@@ -139,6 +139,17 @@ class TestTermination:
         # Episode should eventually finish (either by match or max_steps)
         # Just verify it can run without errors
 
+    def test_single_atom_conductor_is_not_done(self, env):
+        env.reset(seed=43, difficulty="medium", scenario_name="conductor")
+        obs = env.step(MaterialForgeAction(action_type="place", row=0, col=0, atom="B"))
+        assert obs.done is False
+
+    def test_completion_requires_structure_not_just_property_match(self, env):
+        env.reset(seed=44, difficulty="medium", scenario_name="heat-shield")
+        for row, col in [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0)]:
+            obs = env.step(MaterialForgeAction(action_type="place", row=row, col=col, atom="C"))
+        assert obs.done is False
+
 
 class TestState:
     def test_state_property(self, env):

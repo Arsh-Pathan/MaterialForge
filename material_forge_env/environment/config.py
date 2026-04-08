@@ -4,6 +4,8 @@ GRID_SIZE = 8
 MAX_STEPS = 50
 COST_BUDGET_DEFAULT = 80
 EMPTY = "."
+MIN_ATOMS_FOR_COMPLETION = 6
+VALID_COMPLETION_PHASES = {"crystalline", "polycrystalline"}
 
 PROPERTY_NAMES = ["hardness", "conductivity", "thermal_resistance", "elasticity"]
 

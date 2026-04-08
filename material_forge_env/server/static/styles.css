@@ -95,7 +95,7 @@ header {
 /* Main grid: left=lattice+charts, right=sidebar controls */
 .app {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: minmax(0, 1fr) 320px;
   grid-template-rows: auto 1fr;
   height: 100%;
   width: 100%;
@@ -121,7 +121,7 @@ header {
 /* ── MAIN AREA (left) — Lattice + Charts ── */
 .main {
   background: var(--bg-primary);
-  padding: 20px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -138,21 +138,35 @@ header {
 /* Top row: lattice + properties side by side */
 .viz-row-top {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: minmax(420px, 1fr) minmax(320px, 420px);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.lattice-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
 }
 
 .lattice-wrap {
   background: #080a0f;
   border-radius: 16px;
-  padding: 16px;
+  padding: 18px;
   border: 1px solid var(--bg-border);
   display: flex;
   flex-direction: column;
   align-items: center;
   box-shadow: var(--shadow-sm);
-  flex-shrink: 0;
+  width: min(100%, 540px);
+  margin: 0 auto;
+}
+
+.lattice-meta {
+  font-family: var(--mono);
+  color: var(--accent);
+  font-size: 9px;
 }
 .lattice-title {
   align-self: stretch;
@@ -165,12 +179,14 @@ header {
   text-transform: uppercase;
 }
 #lattice-canvas {
-  width: 320px;
-  height: 320px;
-  border-radius: 6px;
+  width: min(100%, 380px);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 10px;
   cursor: crosshair;
   image-rendering: pixelated;
   box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  background: radial-gradient(circle at center, rgba(0,212,170,0.07), transparent 60%);
 }
 
 .lattice-legend {
@@ -182,6 +198,63 @@ header {
 }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 700; color: var(--text-3); text-transform: uppercase; }
 .legend-dot { width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0; }
+
+.interaction-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.interaction-chip {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--text-2);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.lattice-summary,
+.properties-card {
+  width: min(100%, 540px);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summary-block,
+.workbench-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(8, 12, 20, 0.7);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.summary-label {
+  color: var(--text-3);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.summary-value {
+  color: var(--text-1);
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+}
 
 /* Chart Cards */
 .chart-card {
@@ -206,7 +279,7 @@ header {
 .sidebar {
   background: var(--bg-secondary);
   border-left: 1px solid var(--bg-border);
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -317,6 +390,25 @@ input[type="range"] { padding: 0; }
 .atom-btn[data-atom="P"].selected .symbol { background: var(--atom-P); }
 .atom-btn span:last-child { font-size: 8px; font-weight: 700; color: var(--text-3); text-transform: uppercase; }
 
+.workbench-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.control-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--bg-border);
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 /* Telemetry Box */
 .log-box {
   height: 100px;
@@ -420,3 +512,49 @@ pre { padding: 16px; display: block; border: 1px solid var(--bg-border); margin:
 .toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 .toast.success { background: var(--accent); }
 .toast.error { background: #ef4444; color: #fff; }
+
+@media (max-width: 1100px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-left: none;
+    border-top: 1px solid var(--bg-border);
+  }
+
+  .viz-row-top {
+    grid-template-columns: 1fr;
+  }
+
+  .lattice-wrap,
+  .lattice-summary,
+  .properties-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  header {
+    padding: 0 14px;
+    gap: 12px;
+  }
+
+  .nav-tabs {
+    display: none;
+  }
+
+  .main {
+    padding: 16px;
+  }
+
+  .summary-grid,
+  .workbench-grid,
+  .lattice-legend {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .header-status {
+    padding: 5px 8px;
+  }
+}

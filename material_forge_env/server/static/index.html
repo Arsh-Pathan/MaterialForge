@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/playground/styles.css">
+  <link rel="stylesheet" href="/playground/styles.css?v=20260408d">
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -78,24 +78,47 @@
       <!-- MAIN CONTENT (left) — Lattice + Properties + Chart -->
       <main class="main">
         <div class="viz-area">
-          <!-- Top row: lattice beside properties -->
           <div class="viz-row-top">
-            <div class="lattice-wrap">
-              <div class="lattice-title">
-                <span>Crystal Lattice 8×8</span>
-                <span id="lat-atom-count" style="font-family: var(--mono); color: var(--accent); font-size: 9px;">0 ATOMS</span>
+            <section class="lattice-stage">
+              <div class="lattice-wrap">
+                <div class="lattice-title">
+                  <span>Crystal Lattice 8x8</span>
+                  <span id="lat-atom-count" class="lattice-meta">0 ATOMS</span>
+                </div>
+                <canvas id="lattice-canvas"></canvas>
+                <div class="interaction-strip">
+                  <div class="interaction-chip">Left click places the selected atom</div>
+                  <div class="interaction-chip">Right click removes the atom</div>
+                  <div class="interaction-chip">Occupied cells must be cleared before placing</div>
+                </div>
+                <div class="lattice-legend">
+                  <div class="legend-item"><div class="legend-dot" style="background: var(--atom-A);"></div> Metal</div>
+                  <div class="legend-item"><div class="legend-dot" style="background: var(--atom-B);"></div> Conductor</div>
+                  <div class="legend-item"><div class="legend-dot" style="background: var(--atom-C);"></div> Ceramic</div>
+                  <div class="legend-item"><div class="legend-dot" style="background: var(--atom-P);"></div> Polymer</div>
+                </div>
               </div>
-              <canvas id="lattice-canvas"></canvas>
-              <div class="lattice-legend">
-                <div class="legend-item"><div class="legend-dot" style="background: var(--atom-A);"></div> Metal</div>
-                <div class="legend-item"><div class="legend-dot" style="background: var(--atom-B);"></div> Conductor</div>
-                <div class="legend-item"><div class="legend-dot" style="background: var(--atom-C);"></div> Ceramic</div>
-                <div class="legend-item"><div class="legend-dot" style="background: var(--atom-P);"></div> Polymer</div>
-              </div>
-            </div>
 
-            <!-- Properties Panel -->
-            <div class="chart-card">
+              <div class="chart-card lattice-summary">
+                <div class="chart-label">Interaction</div>
+                <div class="summary-grid">
+                  <div class="summary-block">
+                    <span class="summary-label">Hover Cell</span>
+                    <span id="hover-cell" class="summary-value">-</span>
+                  </div>
+                  <div class="summary-block">
+                    <span class="summary-label">Selected Atom</span>
+                    <span id="selected-atom-display" class="summary-value">A</span>
+                  </div>
+                  <div class="summary-block">
+                    <span class="summary-label">Next Click</span>
+                    <span id="quick-action-display" class="summary-value">PLACE</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="chart-card properties-card">
               <div class="chart-label">Physical Properties</div>
               <div class="prop-meters">
                 <div class="prop-row">
@@ -125,8 +148,8 @@
                    <label>Symmetry: <span id="sc-quality" class="prop-vals">0</span></label>
                    <div class="prop-bar-bg" style="height:4px;"><div id="sb-quality" class="prop-bar-fill" style="background:var(--accent3); width:0%"></div></div>
                  </div>
-              </div>
-            </div>
+               </div>
+            </section>
           </div>
 
           <!-- Reward Chart -->
@@ -166,25 +189,25 @@
         </div>
 
         <div class="panel">
-          <div class="panel-title">Action</div>
+          <div class="panel-title">Workbench</div>
           <div class="fields">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-               <div class="field">
-                 <label>Row <span id="row-val" class="log-ts">0</span></label>
-                 <input type="range" id="inp-row" min="0" max="7" value="0">
+            <div class="workbench-grid">
+               <div class="workbench-card">
+                 <span class="summary-label">Selected Cell</span>
+                 <span id="selected-cell" class="summary-value">0, 0</span>
                </div>
-               <div class="field">
-                 <label>Col <span id="col-val" class="log-ts">0</span></label>
-                 <input type="range" id="inp-col" min="0" max="7" value="0">
+               <div class="workbench-card">
+                 <span class="summary-label">Click Mode</span>
+                 <span class="summary-value">Direct</span>
                </div>
             </div>
             
             <div class="field">
-              <label>Type</label>
-              <div class="action-tabs">
-                <button class="action-tab active" data-action="place" onclick="selectAction(this)">Place</button>
-                <button class="action-tab" data-action="replace" onclick="selectAction(this)">Replace</button>
-                <button class="action-tab" data-action="remove" onclick="selectAction(this)">Remove</button>
+              <label>Controls</label>
+              <div class="control-note">
+                <span>Left click places your selected atom.</span>
+                <span>Right click removes the atom under the cursor.</span>
+                <span>Occupied cells cannot be overwritten directly.</span>
               </div>
             </div>
 
@@ -210,7 +233,7 @@
               </div>
             </div>
 
-            <button id="btn-step" class="btn btn-primary">EXECUTE</button>
+            <button id="btn-step" class="btn btn-primary">EXECUTE SELECTED CELL</button>
           </div>
         </div>
 
@@ -297,7 +320,7 @@
 
   <div id="toast" class="toast">Action recorded</div>
 
-  <script src="/playground/app.js"></script>
+  <script src="/playground/app.js?v=20260408d"></script>
   <script>
     function switchTab(btn) {
       const targetId = 'tab-' + btn.dataset.tab;

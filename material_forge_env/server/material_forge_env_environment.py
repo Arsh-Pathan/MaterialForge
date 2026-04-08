@@ -11,7 +11,11 @@ from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
 
 try:
-    from ..environment.config import PROPERTY_NAMES
+    from ..environment.config import (
+        MIN_ATOMS_FOR_COMPLETION,
+        PROPERTY_NAMES,
+        VALID_COMPLETION_PHASES,
+    )
     from ..environment.lattice import Lattice
     from ..models import MaterialForgeAction, MaterialForgeObservation
     from ..environment.physics import (
@@ -22,7 +26,11 @@ try:
     )
     from ..scenarios.scenarios import generate_scenario
 except ImportError:
-    from environment.config import PROPERTY_NAMES
+    from environment.config import (
+        MIN_ATOMS_FOR_COMPLETION,
+        PROPERTY_NAMES,
+        VALID_COMPLETION_PHASES,
+    )
     from environment.lattice import Lattice
     from models import MaterialForgeAction, MaterialForgeObservation
     from environment.physics import (
@@ -95,7 +103,7 @@ class MaterialForgeEnvironment(Environment):
         quality = compute_lattice_quality(self._lattice)
 
         # Check termination
-        done = self._check_done(properties)
+        done = self._check_done(properties, phase)
 
         # Build observation with score breakdown
         score_breakdown = {
@@ -143,14 +151,16 @@ class MaterialForgeEnvironment(Environment):
             return self._lattice.remove(action.row, action.col)
         return False
 
-    def _check_done(self, properties: dict) -> bool:
+    def _check_done(self, properties: dict, phase: str) -> bool:
         """Check if episode should end."""
         # Step limit
         if self._state.step_count >= self._max_steps:
             return True
 
-        # All properties within tolerance
-        if self._lattice.atom_count() > 0:
+        atom_count = self._lattice.atom_count()
+
+        # Only allow success once a meaningful structure has been built.
+        if atom_count >= MIN_ATOMS_FOR_COMPLETION and phase in VALID_COMPLETION_PHASES:
             all_within = all(
                 abs(properties.get(p, 0.0) - self._target.get(p, 0.0))
                 <= self._tolerance

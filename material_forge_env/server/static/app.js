@@ -6,13 +6,17 @@
 class MaterialForgeApp {
   constructor() {
     this.API_BASE = window.location.origin;
-    this.SESSION_ID = null;
+    this.WS_URL = this.API_BASE.replace(/^http/i, 'ws') + '/ws';
+    this.ws = null;
+    this.pendingRequest = null;
+    this.connectingPromise = null;
     this.state = {
       rewardHistory: [],
       bestReward: 0,
       currentObs: null,
       selectedAtom: 'A',
       selectedAction: 'place',
+      selectedCell: { r: 0, c: 0 },
       hoverPos: { r: -1, c: -1 }
     };
 
@@ -36,8 +40,6 @@ class MaterialForgeApp {
     await this.checkHealth();
     this.setLoading(false);
     this.log('Laboratory Protocol Initialized', 'ok');
-    if (this.SESSION_ID) this.log(`Active Session: ${this.SESSION_ID}`, 'ts');
-
     // Health telemetry polling
     setInterval(() => this.checkHealth(), 30000);
   }
@@ -68,10 +70,10 @@ class MaterialForgeApp {
       // Controls
       difficulty: document.getElementById('sel-difficulty'),
       scenario: document.getElementById('sel-scenario'),
-      rowInput: document.getElementById('inp-row'),
-      colInput: document.getElementById('inp-col'),
-      rowVal: document.getElementById('row-val'),
-      colVal: document.getElementById('col-val'),
+      selectedCell: document.getElementById('selected-cell'),
+      hoverCell: document.getElementById('hover-cell'),
+      selectedAtomDisplay: document.getElementById('selected-atom-display'),
+      quickActionDisplay: document.getElementById('quick-action-display'),
       btnReset: document.getElementById('btn-reset'),
       btnStep: document.getElementById('btn-step'),
       atomSection: document.getElementById('atom-section')
@@ -84,45 +86,129 @@ class MaterialForgeApp {
 
   bindEvents() {
     this.els.btnReset.onclick = () => this.doReset();
-    this.els.btnStep.onclick = () => this.doStep();
+    this.els.btnStep.onclick = () => this.doStepFromSelection();
     
     // Canvas interaction
     this.els.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+    this.els.canvas.addEventListener('contextmenu', (e) => this.handleCanvasRightClick(e));
     this.els.canvas.addEventListener('mousemove', (e) => this.handleCanvasHover(e));
     this.els.canvas.addEventListener('mouseleave', () => {
       this.state.hoverPos = { r: -1, c: -1 };
+      this.els.hoverCell.textContent = '-';
       this.drawLattice(this.state.currentObs ? this.state.currentObs.grid : null);
     });
 
     // Keyboard
     document.addEventListener('keydown', (e) => {
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
-      if (e.key === 'Enter') this.doStep();
+      if (e.key === 'Enter') this.doStepFromSelection();
       if (e.key.toLowerCase() === 'r') this.doReset();
     });
-
-    // Coordination
-    this.els.rowInput.oninput = (e) => this.els.rowVal.textContent = e.target.value;
-    this.els.colInput.oninput = (e) => this.els.colVal.textContent = e.target.value;
   }
 
   /* ── API Interaction ── */
-  async apiCall(path, body = null) {
-    const opts = {
-      method: body ? 'POST' : 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    };
-    if (body) opts.body = JSON.stringify(body);
-    if (this.SESSION_ID) opts.headers['X-Session-ID'] = this.SESSION_ID;
-
-    const res = await fetch(this.API_BASE + path, opts);
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
+  async ensureSocket() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      return this.ws;
     }
-    return res.json();
+    if (this.connectingPromise) {
+      return this.connectingPromise;
+    }
+
+    this.connectingPromise = new Promise((resolve, reject) => {
+      const socket = new WebSocket(this.WS_URL);
+
+      socket.addEventListener('open', () => {
+        this.ws = socket;
+        this.connectingPromise = null;
+        this.log('Persistent lab session established', 'ok');
+        resolve(socket);
+      }, { once: true });
+
+      socket.addEventListener('message', (event) => this.handleSocketMessage(event));
+
+      socket.addEventListener('close', () => {
+        this.ws = null;
+        this.connectingPromise = null;
+        if (this.pendingRequest) {
+          this.pendingRequest.reject(new Error('Lab session closed unexpectedly'));
+          this.pendingRequest = null;
+        }
+      });
+
+      socket.addEventListener('error', () => {
+        if (this.connectingPromise) {
+          this.connectingPromise = null;
+        }
+        reject(new Error('Unable to connect to the lab session'));
+      }, { once: true });
+    });
+
+    return this.connectingPromise;
+  }
+
+  handleSocketMessage(event) {
+    let payload;
+    try {
+      payload = JSON.parse(event.data);
+    } catch {
+      if (this.pendingRequest) {
+        this.pendingRequest.reject(new Error('Received invalid server response'));
+        this.pendingRequest = null;
+      }
+      return;
+    }
+
+    if (!this.pendingRequest) return;
+
+    const request = this.pendingRequest;
+    this.pendingRequest = null;
+
+    if (payload.type === 'error') {
+      request.reject(new Error(payload.data?.message || 'Unknown server error'));
+      return;
+    }
+
+    request.resolve(payload.data);
+  }
+
+  normalizeObservationResponse(payload) {
+    const obs = payload?.observation ?? payload ?? {};
+    const grid = Array.isArray(obs.grid) ? obs.grid : (Array.isArray(payload?.grid) ? payload.grid : []);
+
+    return {
+      ...obs,
+      grid,
+      current_properties: obs.current_properties ?? {},
+      target: obs.target ?? {},
+      score_breakdown: obs.score_breakdown ?? {},
+      metadata: obs.metadata ?? {},
+      phase: obs.phase ?? 'amorphous',
+      step_number: obs.step_number ?? 0,
+      max_steps: obs.max_steps ?? 50,
+      total_cost: obs.total_cost ?? 0,
+      cost_budget: obs.cost_budget ?? 0,
+      reward: payload?.reward ?? obs.reward ?? 0,
+      done: payload?.done ?? obs.done ?? false
+    };
+  }
+
+  async wsRequest(message) {
+    const socket = await this.ensureSocket();
+    if (this.pendingRequest) {
+      throw new Error('Another environment request is still in progress');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.pendingRequest = { resolve, reject };
+
+      try {
+        socket.send(JSON.stringify(message));
+      } catch (error) {
+        this.pendingRequest = null;
+        reject(error);
+      }
+    });
   }
 
   async checkHealth() {
@@ -147,10 +233,8 @@ class MaterialForgeApp {
         difficulty: this.els.difficulty.value,
         scenario_name: this.els.scenario.value || undefined
       };
-      const result = await this.apiCall('/reset', payload);
-      
-      const obs = result.observation ?? result;
-      if (result.session_id) this.SESSION_ID = result.session_id;
+      const response = await this.wsRequest({ type: 'reset', data: payload });
+      const obs = this.normalizeObservationResponse(response);
 
       this.state.rewardHistory = [];
       this.state.bestReward = 0;
@@ -167,28 +251,36 @@ class MaterialForgeApp {
     }
   }
 
-  async doStep() {
+  async doStepFromSelection() {
     if (!this.state.currentObs) return this.toast('Reset the environment first', 'error');
-    
+    const { r, c } = this.state.selectedCell;
+    const cell = this.state.currentObs.grid?.[r]?.[c] ?? '.';
+    if (cell !== '.') {
+      return this.toast('Cell is occupied. Right click to remove first.', 'error');
+    }
+    await this.executeAction({
+      action_type: 'place',
+      row: r,
+      col: c,
+      atom: this.state.selectedAtom
+    });
+  }
+
+  async executeAction(action) {
+    if (!this.state.currentObs) return;
     this.els.btnStep.disabled = true;
-    const row = parseInt(this.els.rowInput.value);
-    const col = parseInt(this.els.colInput.value);
-    
-    const action = {
-      action_type: this.state.selectedAction,
-      row, col,
-      atom: this.state.selectedAction !== 'remove' ? this.state.selectedAtom : undefined
-    };
+    const row = action.row;
+    const col = action.col;
 
     try {
-      const result = await this.apiCall('/step', { action });
-      const obs    = result.observation ?? result;
-      const reward = result.reward ?? obs.reward ?? 0;
-      const done   = result.done   ?? obs.done   ?? false;
+      const response = await this.wsRequest({ type: 'step', data: action });
+      const obs = this.normalizeObservationResponse(response);
+      const reward = obs.reward ?? 0;
+      const done   = obs.done ?? false;
 
       this.state.rewardHistory.push(reward);
       this.state.bestReward = Math.max(this.state.bestReward, reward);
-      
+
       this.updateCharts(reward);
       this.updateUI(obs, reward);
 
@@ -207,7 +299,8 @@ class MaterialForgeApp {
   /* ── UI Rendering ── */
   updateUI(obs, reward) {
     this.state.currentObs = obs;
-    this.drawLattice(obs.grid);
+    const grid = Array.isArray(obs.grid) ? obs.grid : [];
+    this.drawLattice(grid);
 
     // KPIs
     this.els.kpi.step.textContent = `${obs.step_number} / ${obs.max_steps}`;
@@ -215,9 +308,12 @@ class MaterialForgeApp {
     this.els.kpi.best.textContent = this.state.bestReward.toFixed(4);
     this.els.kpi.cost.textContent = `${Math.round(obs.total_cost)} / ${Math.round(obs.cost_budget)}`;
 
-    const atomCount = obs.grid.flat().filter(c => c !== '.').length;
+    const atomCount = grid.flat().filter(c => c !== '.').length;
     this.els.kpi.atoms.textContent = atomCount;
     this.els.kpi.atomCount.textContent = `${atomCount} atoms`;
+    this.els.selectedAtomDisplay.textContent = this.state.selectedAtom;
+    this.els.selectedCell.textContent = `${this.state.selectedCell.r}, ${this.state.selectedCell.c}`;
+    this.els.quickActionDisplay.textContent = 'PLACE';
 
     const phase = obs.phase || 'amorphous';
     this.els.kpi.phase.textContent = phase;
@@ -296,11 +392,39 @@ class MaterialForgeApp {
   handleCanvasClick(e) {
     const coords = this.getCanvasCoords(e);
     if (coords) {
-      this.els.rowInput.value = coords.r;
-      this.els.colInput.value = coords.c;
-      this.els.rowVal.textContent = coords.r;
-      this.els.colVal.textContent = coords.c;
-      this.drawLattice(this.state.currentObs ? this.state.currentObs.grid : null);
+      this.setSelectedCell(coords);
+      if (!this.state.currentObs) return;
+      const currentCell = this.state.currentObs.grid?.[coords.r]?.[coords.c] ?? '.';
+      if (currentCell !== '.') {
+        this.toast('Cell is occupied. Right click to remove first.', 'error');
+        return;
+      }
+      this.executeAction({
+        action_type: 'place',
+        row: coords.r,
+        col: coords.c,
+        atom: this.state.selectedAtom
+      });
+    }
+  }
+
+  handleCanvasRightClick(e) {
+    e.preventDefault();
+    const coords = this.getCanvasCoords(e);
+    if (coords) {
+      this.setSelectedCell(coords);
+      if (!this.state.currentObs) return;
+      const currentCell = this.state.currentObs.grid?.[coords.r]?.[coords.c] ?? '.';
+      if (currentCell === '.') {
+        this.toast('Cell is already empty', 'error');
+        return;
+      }
+      this.els.quickActionDisplay.textContent = 'REMOVE';
+      this.executeAction({
+        action_type: 'remove',
+        row: coords.r,
+        col: coords.c
+      });
     }
   }
 
@@ -308,8 +432,19 @@ class MaterialForgeApp {
     const coords = this.getCanvasCoords(e);
     if (coords && (coords.r !== this.state.hoverPos.r || coords.c !== this.state.hoverPos.c)) {
       this.state.hoverPos = coords;
+      this.els.hoverCell.textContent = `${coords.r}, ${coords.c}`;
+      if (this.state.currentObs) {
+        const currentCell = this.state.currentObs.grid?.[coords.r]?.[coords.c] ?? '.';
+        this.els.quickActionDisplay.textContent = currentCell === '.' ? 'PLACE' : 'REMOVE ONLY';
+      }
       this.drawLattice(this.state.currentObs ? this.state.currentObs.grid : null);
     }
+  }
+
+  setSelectedCell(coords) {
+    this.state.selectedCell = coords;
+    this.els.selectedCell.textContent = `${coords.r}, ${coords.c}`;
+    this.drawLattice(this.state.currentObs ? this.state.currentObs.grid : null);
   }
 
   getCanvasCoords(e) {
@@ -398,14 +533,10 @@ class MaterialForgeApp {
     ctx.closePath();
   }
 
-  selectAction(action) {
-    this.state.selectedAction = action;
-    document.querySelectorAll('.action-tab').forEach(b => b.classList.toggle('active', b.dataset.action === action));
-    this.els.atomSection.style.opacity = action === 'remove' ? '0.4' : '1';
-  }
-
   selectAtom(atom) {
     this.state.selectedAtom = atom;
+    this.els.selectedAtomDisplay.textContent = atom;
+    this.els.quickActionDisplay.textContent = 'PLACE';
     document.querySelectorAll('.atom-btn').forEach(b => b.classList.toggle('selected', b.dataset.atom === atom));
   }
 }
@@ -472,6 +603,4 @@ async function loadBenchmarks() {
 window.MF_APP = new MaterialForgeApp();
 setTimeout(loadBenchmarks, 1000); // Initial load attempt
 
-// Link external clicks for the instantiated class
-function selectAction(btn) { window.MF_APP.selectAction(btn.dataset.action); }
 function selectAtom(btn) { window.MF_APP.selectAtom(btn.dataset.atom); }
