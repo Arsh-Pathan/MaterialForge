@@ -4,7 +4,7 @@ emoji: 🔬
 colorFrom: red
 colorTo: purple
 sdk: docker
-app_port: 7860
+app_port: 8000
 tags:
   - openenv
   - reinforcement-learning
@@ -38,7 +38,7 @@ from material_forge_env import MaterialForgeEnv
 env = MaterialForgeEnv(base_url="https://ArshPathan-material-forge-env.hf.space")
 
 # Alternatively, connect to a local server
-# env = MaterialForgeEnv(base_url="http://localhost:7860")
+# env = MaterialForgeEnv(base_url="http://localhost:8000")
 
 with env:
     result = env.reset()

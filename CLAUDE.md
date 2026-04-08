@@ -66,9 +66,7 @@ Client.step(MaterialForgeAction)
 | `lattice.py` | `Lattice` class — grid manipulation, neighbor queries, cost calculation |
 | `physics.py` | Heuristic property estimation + phase classification + stability scoring |
 | `scenarios.py` | Target profile generators (easy/medium/hard + predefined archetypes) |
-| `rubrics.py` | `HeuristicRewardRubric(Rubric)` + optional `MaterialDesignLLMJudge` via `WeightedSum` |
-| `llm_utils.py` | Cached HF Inference API client factory; returns None without `HF_TOKEN` |
-| `hint_engine.py` | Rate-limited LLM hints (3/episode, only when struggling) |
+| `rubrics.py` | `HeuristicRewardRubric(Rubric)` — computes reward via property matching + stability + phase |
 
 ### OpenEnv Framework Patterns
 

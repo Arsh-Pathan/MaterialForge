@@ -66,11 +66,13 @@ def estimate_properties(lattice: Lattice) -> Dict[str, float]:
     void_fraction = 1.0 - density
     elasticity_void_bonus = 0.15 * min(void_fraction / 0.5, 1.0) if void_fraction > 0.1 else 0.0
 
-    # Scale to 0-100
+    # Scale to 0-100.  With primary contribution = 1.0, a full grid of one
+    # atom type should be able to reach ~95 for its primary property.
+    # base_max = 1.0 * 80 = 80, bonding_max ~ 15, density_max = 10 → ~105 clamped to 100.
     result: Dict[str, float] = {}
     for prop in PROPERTY_NAMES:
-        base = props[prop] * 70.0  # base contribution (up to ~70)
-        bonding = bonding_bonus[prop] * 20.0  # bonding bonus (up to ~20)
+        base = props[prop] * 80.0  # base contribution (up to ~80)
+        bonding = bonding_bonus[prop] * 25.0  # bonding bonus (up to ~15)
         dens = (density_mult - 0.6) * 25.0  # density bonus (up to ~10)
         val = base + bonding + dens
         if prop == "elasticity":
