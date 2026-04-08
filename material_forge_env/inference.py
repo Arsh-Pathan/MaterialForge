@@ -3,18 +3,16 @@ Inference Script - MaterialForge
 ================================
 MANDATORY
 - Before submitting, ensure the following variables are defined in your environment configuration:
-    API_BASE_URL   The API endpoint for the LLM.
-    MODEL_NAME     The model identifier to use for inference.
-    HF_TOKEN       Your Hugging Face / API key.
+    API_BASE_URL    The LiteLLM proxy endpoint injected by the validator.
+    API_KEY         The LiteLLM proxy API key injected by the validator.
+    MODEL_NAME      The model identifier to use for inference.
     LOCAL_IMAGE_NAME The name of the local Docker image for the environment
                      (used by from_docker_image()).
 
-- Defaults are set for API_BASE_URL and MODEL_NAME:
-    API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-    MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-
 - The inference script must be named `inference.py` and placed in the root directory of the project.
-- Participants must use the OpenAI Client for all LLM calls using the above variables.
+- Participants must use the OpenAI client for all LLM calls with:
+    base_url=os.environ["API_BASE_URL"]
+    api_key=os.environ["API_KEY"]
 
 STDOUT FORMAT
 - The script must emit exactly three line types to stdout, in this order:
@@ -49,10 +47,7 @@ except ImportError:
     from environment.physics import classify_phase, estimate_properties
 
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
-
 IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "material-forge-env:latest")
 SPACE_URL = os.getenv("SPACE_URL")
 BENCHMARK = "material_forge_env"
@@ -114,6 +109,14 @@ def log_end(success: bool, steps: int, rewards: List[float]) -> None:
         f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}",
         flush=True,
     )
+
+
+def require_env(name: str) -> str:
+    """Return a required environment variable or raise a clear error."""
+    value = os.environ.get(name)
+    if value:
+        return value
+    raise RuntimeError(f"Missing required environment variable: {name}")
 
 
 SYSTEM_PROMPT = """You are a baseline agent for a crystal-design OpenEnv benchmark.
@@ -556,12 +559,17 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
 
 async def main() -> None:
     """Run the benchmark tasks using a simple LLM baseline policy."""
-    API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
+    try:
+        api_base_url = require_env("API_BASE_URL")
+        api_key = require_env("API_KEY")
+    except RuntimeError as exc:
+        print(f"[DEBUG] {exc}", flush=True)
+        for task in TASKS:
+            log_start(task=task["name"], env=BENCHMARK, model=MODEL_NAME)
+            log_end(success=False, steps=0, rewards=[])
+        return
 
-    client = OpenAI(
-        base_url=API_BASE_URL,
-        api_key=API_KEY
-    )
+    client = OpenAI(base_url=api_base_url, api_key=api_key)
 
     try:
         if SPACE_URL:
