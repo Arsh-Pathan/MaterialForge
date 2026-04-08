@@ -62,6 +62,8 @@ TEMPERATURE = 0.1
 MAX_TOKENS = 160
 SUCCESS_THRESHOLD = 0.3
 PROXY_PROBE_MAX_TOKENS = 8
+MIN_TASK_SCORE = 0.001
+MAX_TASK_SCORE = 0.999
 
 PROPERTY_TO_ATOM = {
     "hardness": "A",
@@ -110,6 +112,11 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
         f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
         flush=True,
     )
+
+
+def normalize_task_score(raw_score: float) -> float:
+    """Clamp task scores into the validator-required open interval (0, 1)."""
+    return min(max(raw_score, MIN_TASK_SCORE), MAX_TASK_SCORE)
 
 
 SYSTEM_PROMPT = """You are a baseline agent for a crystal-design OpenEnv benchmark.
@@ -559,7 +566,7 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
         print(f"[DEBUG] Task {task['name']} error: {exc}", flush=True)
 
     score = max(rewards) if rewards else 0.0
-    score = min(max(score, 0.0), 1.0)
+    score = normalize_task_score(score)
     success = score >= SUCCESS_THRESHOLD
     log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
     return score
@@ -576,7 +583,7 @@ async def main() -> None:
         print(f"[DEBUG] {exc}", flush=True)
         for task in TASKS:
             log_start(task=task["name"], env=BENCHMARK, model=MODEL_NAME)
-            log_end(success=False, steps=0, score=0.0, rewards=[])
+            log_end(success=False, steps=0, score=MIN_TASK_SCORE, rewards=[])
         return
 
     try:
@@ -602,7 +609,7 @@ async def main() -> None:
         # Emit minimal structured output so validator can parse results
         for task in TASKS:
             log_start(task=task["name"], env=BENCHMARK, model=MODEL_NAME)
-            log_end(success=False, steps=0, score=0.0, rewards=[])
+            log_end(success=False, steps=0, score=MIN_TASK_SCORE, rewards=[])
 
         return
 
