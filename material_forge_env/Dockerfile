@@ -89,4 +89,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Run the FastAPI server
 # OpenEnv's LocalDockerProvider hardcodes -p <host>:8000, so we MUST listen on 8000.
 # Hugging Face Spaces will work correctly on port 8000 if app_port: 8000 is set in README.md
-CMD ["sh", "-c", "cd /app/env && uvicorn server.app:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "cd /app/env && uvicorn material_forge_env.server.app:app --host 0.0.0.0 --port ${PORT}"]

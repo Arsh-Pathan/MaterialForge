@@ -561,14 +561,21 @@ async def main() -> None:
 
     client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
-    if SPACE_URL:
-        env = MaterialForgeEnv(base_url=SPACE_URL)
-        await env.connect()
-    elif os.getenv("USE_LOCALHOST"):
-        env = MaterialForgeEnv(base_url="http://localhost:8000")
-        await env.connect()
-    else:
-        env = await MaterialForgeEnv.from_docker_image(IMAGE_NAME)
+    try:
+        if SPACE_URL:
+            env = MaterialForgeEnv(base_url=SPACE_URL)
+            await env.connect()
+
+        elif os.getenv("USE_LOCALHOST"):
+            env = MaterialForgeEnv(base_url="http://localhost:8000")
+            await env.connect()
+
+        else:
+            env = await MaterialForgeEnv.from_docker_image(IMAGE_NAME)
+
+    except Exception as e:
+        print(f"[DEBUG] Failed to start environment: {e}", flush=True)
+        return
 
     try:
         scores = []
