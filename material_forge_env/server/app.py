@@ -79,7 +79,7 @@ def main():
 
     Usage:
         uv run server
-        uv run server --port 7860
+        uv run server --port 8000
     """
     import argparse
 
@@ -87,7 +87,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=int(os.getenv("PORT", 7860)))
+    parser.add_argument("--port", type=int, default=int(os.getenv("PORT", 8000)))
     args = parser.parse_args()
     uvicorn.run(app, host=args.host, port=args.port)
 

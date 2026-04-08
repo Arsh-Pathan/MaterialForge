@@ -19,7 +19,7 @@ class MaterialForgeApp {
     // Configuration
     this.ATOM_COLORS = { A: '#e74c3c', B: '#3b82f6', C: '#f59e0b', P: '#10b981', '.': '#111827' };
     this.ATOM_GLOW   = { A: '#e74c3c', B: '#3b82f6', C: '#f59e0b', P: '#10b981' };
-    this.CELL_SIZE = 48;
+    this.CELL_SIZE = 38;
     this.GRID_SIZE = 8;
     this.PAD = 4;
 
@@ -238,7 +238,7 @@ class MaterialForgeApp {
     document.getElementById('sb-stability').style.width = ((sb.stability ?? 0) * 100) + '%';
     document.getElementById('sb-quality').style.width   = ((sb.lattice_quality ?? 0) * 100) + '%';
 
-    if (obs.metadata) {
+    if (obs.metadata && this.els.kpi.episodeId) {
       this.els.kpi.episodeId.textContent = `scenario: ${obs.metadata.scenario_name || 'random'} · diff: ${obs.metadata.difficulty || '—'}`;
     }
   }

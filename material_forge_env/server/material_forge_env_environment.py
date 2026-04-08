@@ -124,53 +124,10 @@ class MaterialForgeEnvironment(Environment):
             },
         )
 
-        # Apply rubric to get reward
+        # Apply rubric to get reward (delegates to HeuristicRewardRubric.forward)
         obs.reward = self._apply_rubric(action, obs)
 
         return obs
-
-    def _apply_rubric(self, action: MaterialForgeAction, obs: MaterialForgeObservation) -> float:
-        """Compute the scalar reward using the lab's scientific rubric.
-        
-        Formula: R = 0.5*match + 0.25*stability + 0.15*quality + 0.1*phase - cost_pen
-        """
-        # 1. Property Match (0.0 to 1.0)
-        diffs = []
-        for p in obs.target:
-            tgt = max(obs.target[p], 1.0)
-            curr = obs.current_properties.get(p, 0.0)
-            diffs.append(abs(curr - tgt) / tgt)
-        
-        property_match = max(0.0, 1.0 - (sum(diffs) / max(len(diffs), 1)))
-        
-        # 2. Structural Features
-        sb = obs.score_breakdown
-        stability = sb.get("stability", 0.0)
-        quality = sb.get("lattice_quality", 0.0)
-        
-        # 3. Phase Bonus
-        phase_bonus = 0.0
-        if obs.phase == "crystalline": phase_bonus = 1.0
-        elif obs.phase == "polycrystalline": phase_bonus = 0.5
-        
-        # 4. Cost Offset
-        cost_penalty = 0.0
-        if obs.total_cost > obs.cost_budget:
-            cost_penalty = (obs.total_cost - obs.cost_budget) / obs.cost_budget
-            
-        # Composite Reward calculation
-        reward = (
-            0.50 * property_match + 
-            0.25 * stability + 
-            0.15 * quality + 
-            0.10 * phase_bonus - 
-            0.10 * cost_penalty
-        )
-        
-        final_r = max(0.01, float(reward)) # MINIMUM REWARD OF 0.01 FOR VISIBILITY
-        
-        print(f"DEBUG: Step {obs.step_number} | Action: {action.action_type} | Match: {property_match:.3f} | Rwd: {final_r:.4f}")
-        return final_r
 
     def _apply_action(self, action: MaterialForgeAction) -> bool:
         """Apply the action to the lattice. Returns True if action was valid."""

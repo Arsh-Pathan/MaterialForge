@@ -28,7 +28,9 @@ class HeuristicRewardRubric(Rubric):
         total_cost = observation.total_cost
         cost_budget = observation.cost_budget
 
-        # Property match: 1 - mean absolute deviation (normalized to 0-1)
+        # Property match: 1 - mean relative deviation, normalized to 0-100 scale.
+        # Using /100 normalization ensures equal weighting across all properties
+        # regardless of their target magnitude.
         deviations = []
         for prop in PROPERTY_NAMES:
             t = target.get(prop, 0.0)

@@ -54,7 +54,7 @@ reward = 0.50 * property_match + 0.25 * stability + 0.15 * lattice_quality + 0.1
 cd material_forge_env
 uv sync
 uv run server              # starts on http://localhost:8000
-uv run server --port 7860  # or specify a port
+uv run server --port 8000  # or specify a port
 ```
 
 ### Connect with Python

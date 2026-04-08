@@ -22,7 +22,7 @@ STDOUT FORMAT
 
     [START] task=<task_name> env=<benchmark> model=<model_name>
     [STEP]  step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>
-    [END]   success=<true|false> steps=<n> score=<score> rewards=<r1,r2,...,rn>
+    [END]   success=<true|false> steps=<n> rewards=<r1,r2,...,rn>
 
   Rules:
     - One [START] line at episode begin.
@@ -32,14 +32,13 @@ STDOUT FORMAT
     - done and success are lowercase booleans: true or false.
     - error is the raw last_action_error string, or null if none.
     - All fields on a single line with no newlines within a line.
-    - Each task should return score in [0, 1].
 
   Example:
     [START] task=diamond-like env=material_forge_env model=Qwen2.5-72B-Instruct
     [STEP] step=1 action=place(0,0,A) reward=0.12 done=false error=null
     [STEP] step=2 action=place(0,1,A) reward=0.18 done=false error=null
     ...
-    [END] success=true steps=25 score=0.72 rewards=0.12,0.18,...
+    [END] success=true steps=25 rewards=0.12,0.18,...
 """
 
 import asyncio
@@ -54,23 +53,20 @@ from openai import OpenAI
 from material_forge_env import MaterialForgeAction, MaterialForgeEnv
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Configuration (OpenEnv Hackathon — mandatory env vars)
 # ---------------------------------------------------------------------------
-IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "material-forge-env:latest")
-SPACE_URL = os.getenv(
-    "SPACE_URL"
-)  # e.g. https://ArshPathan-material-forge-env.hf.space
-API_KEY = (
-    os.getenv("HF_TOKEN")
-    or os.getenv("API_KEY")
-    or os.getenv("OPENAI_API_KEY")
-    or os.getenv("OPENROUTER_API_KEY")
-)
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://openrouter.ai/api/v1")
-MODEL_NAME = os.getenv(
-    "MODEL_NAME", "openrouter/auto"
-)
+# MANDATORY: defaults required for API_BASE_URL and MODEL_NAME
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+
+# MANDATORY: HF_TOKEN has no default — must be set
+HF_TOKEN = os.getenv("HF_TOKEN")
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required")
+
+IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "material-forge-env:latest")
+SPACE_URL = os.getenv("SPACE_URL")  # e.g. https://ArshPathan-material-forge-env.hf.space
 BENCHMARK = "material_forge_env"
 
 # The 3 benchmark tasks — deterministic named scenarios at medium difficulty
@@ -104,10 +100,10 @@ def log_step(
     )
 
 
-def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+def log_end(success: bool, steps: int, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(
-        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}",
         flush=True,
     )
 
@@ -381,7 +377,7 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
         print(f"[DEBUG] Task {task_name} error: {exc}", flush=True)
 
     finally:
-        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+        log_end(success=success, steps=steps_taken, rewards=rewards)
 
     return score
 
@@ -392,13 +388,14 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
 
 
 async def main() -> None:
-    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+    # Initialize OpenAI client — MUST use HF_TOKEN as api_key
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
     if SPACE_URL:
         env = MaterialForgeEnv(base_url=SPACE_URL)
         await env.connect()
     elif os.getenv("USE_LOCALHOST"):
-        env = MaterialForgeEnv(base_url="http://localhost:7860")
+        env = MaterialForgeEnv(base_url="http://localhost:8000")
         await env.connect()
     else:
         env = await MaterialForgeEnv.from_docker_image(IMAGE_NAME)

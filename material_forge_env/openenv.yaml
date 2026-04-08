@@ -3,7 +3,7 @@ name: material_forge_env
 type: space
 runtime: fastapi
 app: server.app:app
-port: 7860
+port: 8000
 
 description: >
   AI-driven crystal structure design on an 8x8 lattice grid.

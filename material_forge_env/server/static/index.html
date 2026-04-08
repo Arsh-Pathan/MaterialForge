@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MaterialForge — Discovery Lab Dashboard</title>
-  <meta name="description" content="AI-driven atomic crystal structure design lab for reinforcement learning. Scientific playground for material science discovery." />
+  <title>MaterialForge — Discovery Lab</title>
+  <meta name="description" content="AI-driven atomic crystal structure design lab for reinforcement learning." />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
   <!-- Loading Screen -->
   <div id="loading-overlay" class="loading-overlay">
     <div class="spinner"></div>
-    <div style="font-size: 14px; color: var(--text-2); font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;">LAB INITIALIZING...</div>
+    <div style="font-size: 13px; color: var(--text-2); font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;">INITIALIZING LAB...</div>
   </div>
 
   <header>
@@ -26,20 +26,19 @@
       <div class="logo-icon">M</div>
       <div>
         <div class="logo-text">MaterialForge</div>
-        <div class="logo-sub">MATERIAL DISCOVERY LABORATORY v2.1</div>
+        <div class="logo-sub">DISCOVERY LABORATORY v3.0</div>
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
     <nav class="nav-tabs">
       <button class="nav-tab active" data-tab="playground" onclick="switchTab(this)">PLAYGROUND</button>
-      <button class="nav-tab" data-tab="docs" onclick="switchTab(this)">DOCUMENTATION</button>
-      <button class="nav-tab" data-tab="api" onclick="switchTab(this)">API REFERENCE</button>
-      <button class="nav-tab" data-tab="analytics" onclick="switchTab(this)">ANALYTICS & BENCHMARKS</button>
+      <button class="nav-tab" data-tab="docs" onclick="switchTab(this)">DOCS</button>
+      <button class="nav-tab" data-tab="api" onclick="switchTab(this)">API</button>
+      <button class="nav-tab" data-tab="analytics" onclick="switchTab(this)">ANALYTICS</button>
     </nav>
 
     <div class="header-status">
-      <div id="api-base" style="font-family: var(--mono); opacity: 0.6; font-size: 10px;">ENDPOINT</div>
+      <div id="api-base" style="font-family: var(--mono); opacity: 0.6; font-size: 9px;"></div>
       <div id="status-dot" class="status-dot"></div>
       <div id="status-text">CONNECTING...</div>
     </div>
@@ -51,61 +50,125 @@
       <!-- KPI Strip -->
       <div class="kpi-strip">
         <div class="kpi-card">
-          <div class="kpi-label">Current Step</div>
+          <div class="kpi-label">Step</div>
           <div id="kpi-step" class="kpi-value">0 / 50</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Instant Reward</div>
+          <div class="kpi-label">Reward</div>
           <div id="kpi-reward" class="kpi-value">0.0000</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Episode Peak</div>
+          <div class="kpi-label">Best</div>
           <div id="kpi-best" class="kpi-value">0.0000</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Structural Phase</div>
-          <div id="kpi-phase" class="kpi-value phase-amorphous">amorphous</div>
+          <div class="kpi-label">Phase</div>
+          <div id="kpi-phase" class="kpi-value phase-amorphous">—</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Atom Density</div>
+          <div class="kpi-label">Atoms</div>
           <div id="kpi-atoms" class="kpi-value">0</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Resource Usage</div>
+          <div class="kpi-label">Cost</div>
           <div id="kpi-cost" class="kpi-value">0 / 80</div>
         </div>
       </div>
 
-      <!-- Sidebar -->
+      <!-- MAIN CONTENT (left) — Lattice + Properties + Chart -->
+      <main class="main">
+        <div class="viz-area">
+          <!-- Top row: lattice beside properties -->
+          <div class="viz-row-top">
+            <div class="lattice-wrap">
+              <div class="lattice-title">
+                <span>Crystal Lattice 8×8</span>
+                <span id="lat-atom-count" style="font-family: var(--mono); color: var(--accent); font-size: 9px;">0 ATOMS</span>
+              </div>
+              <canvas id="lattice-canvas"></canvas>
+              <div class="lattice-legend">
+                <div class="legend-item"><div class="legend-dot" style="background: var(--atom-A);"></div> Metal</div>
+                <div class="legend-item"><div class="legend-dot" style="background: var(--atom-B);"></div> Conductor</div>
+                <div class="legend-item"><div class="legend-dot" style="background: var(--atom-C);"></div> Ceramic</div>
+                <div class="legend-item"><div class="legend-dot" style="background: var(--atom-P);"></div> Polymer</div>
+              </div>
+            </div>
+
+            <!-- Properties Panel -->
+            <div class="chart-card">
+              <div class="chart-label">Physical Properties</div>
+              <div class="prop-meters">
+                <div class="prop-row">
+                  <div class="prop-header"><span class="prop-name">Hardness</span><span id="pv-hardness" class="prop-vals">0 / 0</span></div>
+                  <div class="prop-bar-bg"><div id="pt-hardness" class="prop-bar-target"></div><div id="pb-hardness" class="prop-bar-fill" style="background: var(--atom-A); width: 0%"></div></div>
+                </div>
+                <div class="prop-row">
+                  <div class="prop-header"><span class="prop-name">Conductivity</span><span id="pv-conductivity" class="prop-vals">0 / 0</span></div>
+                  <div class="prop-bar-bg"><div id="pt-conductivity" class="prop-bar-target"></div><div id="pb-conductivity" class="prop-bar-fill" style="background: var(--atom-B); width: 0%"></div></div>
+                </div>
+                <div class="prop-row">
+                  <div class="prop-header"><span class="prop-name">Thermal Resistance</span><span id="pv-thermal_resistance" class="prop-vals">0 / 0</span></div>
+                  <div class="prop-bar-bg"><div id="pt-thermal_resistance" class="prop-bar-target"></div><div id="pb-thermal_resistance" class="prop-bar-fill" style="background: var(--atom-C); width: 0%"></div></div>
+                </div>
+                <div class="prop-row">
+                  <div class="prop-header"><span class="prop-name">Elasticity</span><span id="pv-elasticity" class="prop-vals">0 / 0</span></div>
+                  <div class="prop-bar-bg"><div id="pt-elasticity" class="prop-bar-target"></div><div id="pb-elasticity" class="prop-bar-fill" style="background: var(--atom-P); width: 0%"></div></div>
+                </div>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                 <div class="field">
+                   <label>Stability: <span id="sc-stability" class="prop-vals">0</span></label>
+                   <div class="prop-bar-bg" style="height:4px;"><div id="sb-stability" class="prop-bar-fill" style="background:var(--accent2); width:0%"></div></div>
+                 </div>
+                 <div class="field">
+                   <label>Symmetry: <span id="sc-quality" class="prop-vals">0</span></label>
+                   <div class="prop-bar-bg" style="height:4px;"><div id="sb-quality" class="prop-bar-fill" style="background:var(--accent3); width:0%"></div></div>
+                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reward Chart -->
+          <div class="chart-card" style="min-height: 160px;">
+            <div class="chart-label">Reward Convergence</div>
+            <div style="flex: 1; min-height: 0;">
+              <canvas id="reward-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- SIDEBAR (right) — Controls -->
       <aside class="sidebar">
         <div class="panel">
-          <div class="panel-title">Environmental Config</div>
+          <div class="panel-title">Setup</div>
           <div class="fields">
             <div class="field">
-              <label>Benchmark Scenario</label>
+              <label>Scenario</label>
               <select id="sel-scenario">
-                <option value="">(Randomly Generated)</option>
-                <option value="diamond-like">Diamond-like (Hardness Focus)</option>
-                <option value="conductor">Conductor (Elec. & Elastic Focus)</option>
-                <option value="heat-shield">Heat Shield (Thermal & Hardness Focus)</option>
+                <option value="">Random</option>
+                <option value="diamond-like">Diamond-like</option>
+                <option value="conductor">Conductor</option>
+                <option value="heat-shield">Heat Shield</option>
               </select>
             </div>
             <div class="field">
-              <label>Discovery Constraints</label>
+              <label>Difficulty</label>
               <select id="sel-difficulty">
-                <option value="easy">Unrestricted (120 Budget)</option>
-                <option value="medium" selected>Standard (80 Budget)</option>
-                <option value="hard">Constrained (60 Budget)</option>
+                <option value="easy">Easy (120)</option>
+                <option value="medium" selected>Medium (80)</option>
+                <option value="hard">Hard (60)</option>
               </select>
             </div>
-            <button id="btn-reset" class="btn btn-secondary" style="margin-top: 10px;">INITIALIZE NEW EPISODE</button>
+            <button id="btn-reset" class="btn btn-secondary" style="margin-top: 4px;">RESET</button>
           </div>
         </div>
 
         <div class="panel">
-          <div class="panel-title">Manual Intervention</div>
+          <div class="panel-title">Action</div>
           <div class="fields">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                <div class="field">
                  <label>Row <span id="row-val" class="log-ts">0</span></label>
                  <input type="range" id="inp-row" min="0" max="7" value="0">
@@ -117,16 +180,16 @@
             </div>
             
             <div class="field">
-              <label>Intervention Protocol</label>
+              <label>Type</label>
               <div class="action-tabs">
-                <button class="action-tab active" data-action="place" onclick="selectAction(this)">PLACE</button>
-                <button class="action-tab" data-action="replace" onclick="selectAction(this)">REPLACE</button>
-                <button class="action-tab" data-action="remove" onclick="selectAction(this)">REMOVE</button>
+                <button class="action-tab active" data-action="place" onclick="selectAction(this)">Place</button>
+                <button class="action-tab" data-action="replace" onclick="selectAction(this)">Replace</button>
+                <button class="action-tab" data-action="remove" onclick="selectAction(this)">Remove</button>
               </div>
             </div>
 
             <div id="atom-section" class="field">
-              <label>Select Atom Species</label>
+              <label>Atom</label>
               <div class="atom-grid">
                 <div class="atom-btn selected" data-atom="A" onclick="selectAtom(this)">
                   <span class="symbol">A</span>
@@ -134,7 +197,7 @@
                 </div>
                 <div class="atom-btn" data-atom="B" onclick="selectAtom(this)">
                   <span class="symbol">B</span>
-                  <span>Elec (6)</span>
+                  <span>Cond (6)</span>
                 </div>
                 <div class="atom-btn" data-atom="C" onclick="selectAtom(this)">
                   <span class="symbol">C</span>
@@ -147,111 +210,41 @@
               </div>
             </div>
 
-            <button id="btn-step" class="btn btn-primary" style="margin-top: 5px;">EXECUTE STEP</button>
+            <button id="btn-step" class="btn btn-primary">EXECUTE</button>
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-title">Laboratory Telemetry</div>
-          <div id="log-box" class="log-box">
-             <div class="log-entry">Awaiting session start...</div>
+        <div class="panel" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+          <div class="panel-title">Log</div>
+          <div id="log-box" class="log-box" style="flex: 1;">
+             <div class="log-entry">Awaiting session...</div>
           </div>
         </div>
       </aside>
-
-      <main class="main">
-        <div class="viz-area">
-          <div class="lattice-wrap">
-            <div class="lattice-title">
-              <span>Crystal Unit Cell — 8x8 Lattice</span>
-              <span id="lat-atom-count" style="font-family: var(--mono); color: var(--accent); font-size: 10px;">0 ATOMS</span>
-            </div>
-            <canvas id="lattice-canvas"></canvas>
-            <div class="lattice-legend">
-              <div class="legend-item"><div class="legend-dot" style="background: var(--atom-A);"></div> (A) Metal</div>
-              <div class="legend-item"><div class="legend-dot" style="background: var(--atom-B);"></div> (B) Lead/Cond.</div>
-              <div class="legend-item"><div class="legend-dot" style="background: var(--atom-C);"></div> (C) Ceramic</div>
-              <div class="legend-item"><div class="legend-dot" style="background: var(--atom-P);"></div> (P) Polymer</div>
-            </div>
-          </div>
-
-          <div class="chart-card">
-            <div class="chart-label">Physical Properties Approximation</div>
-            <div class="prop-meters">
-              <div class="prop-row">
-                <div class="prop-header"><span class="prop-name">Hardness (Vickers)</span><span id="pv-hardness" class="prop-vals">0 / 0</span></div>
-                <div class="prop-bar-bg"><div id="pt-hardness" class="prop-bar-target"></div><div id="pb-hardness" class="prop-bar-fill" style="background: var(--atom-A); width: 0%"></div></div>
-              </div>
-              <div class="prop-row">
-                <div class="prop-header"><span class="prop-name">Electrical Conductivity</span><span id="pv-conductivity" class="prop-vals">0 / 0</span></div>
-                <div class="prop-bar-bg"><div id="pt-conductivity" class="prop-bar-target"></div><div id="pb-conductivity" class="prop-bar-fill" style="background: var(--atom-B); width: 0%"></div></div>
-              </div>
-              <div class="prop-row">
-                <div class="prop-header"><span class="prop-name">Thermal Resistance</span><span id="pv-thermal_resistance" class="prop-vals">0 / 0</span></div>
-                <div class="prop-bar-bg"><div id="pt-thermal_resistance" class="prop-bar-target"></div><div id="pb-thermal_resistance" class="prop-bar-fill" style="background: var(--atom-C); width: 0%"></div></div>
-              </div>
-              <div class="prop-row">
-                <div class="prop-header"><span class="prop-name">Young's Modulus</span><span id="pv-elasticity" class="prop-vals">0 / 0</span></div>
-                <div class="prop-bar-bg"><div id="pt-elasticity" class="prop-bar-target"></div><div id="pb-elasticity" class="prop-bar-fill" style="background: var(--atom-P); width: 0%"></div></div>
-              </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
-               <div class="field">
-                 <label>Packing Stability: <span id="sc-stability" class="prop-vals">0</span></label>
-                 <div class="prop-bar-bg" style="height:4px;"><div id="sb-stability" class="prop-bar-fill" style="background:var(--accent2); width:0%"></div></div>
-               </div>
-               <div class="field">
-                 <label>Lattice Symmetry: <span id="sc-quality" class="prop-vals">0</span></label>
-                 <div class="prop-bar-bg" style="height:4px;"><div id="sb-quality" class="prop-bar-fill" style="background:var(--accent3); width:0%"></div></div>
-               </div>
-            </div>
-          </div>
-
-          <div class="chart-card">
-            <div class="chart-label">Reward Feedback Convergence</div>
-            <div style="flex: 1; min-height: 0;">
-              <canvas id="reward-chart"></canvas>
-            </div>
-          </div>
-        </div>
-      </main>
     </div>
   </div>
 
-  <!-- ── DOCUMENTATION TAB ── -->
+  <!-- ── DOCS TAB ── -->
   <div id="tab-docs" class="tab-content">
     <div class="doc-container">
        <section>
          <h2>Benchmark Specifications</h2>
-         <p>MaterialForge is a reinforcement learning benchmark focused on inverse materials discovery. Agents are challenged to design an 8x8 atomic lattice that reproduces specific macro-properties.</p>
-         
+         <p>MaterialForge is an RL benchmark for inverse materials discovery. Agents design an 8×8 atomic lattice to reproduce target macro-properties.</p>
          <div class="table-wrap">
            <table>
-             <thead>
-               <tr><th>Species</th><th>Name</th><th>Primary Metric</th><th>Cost</th></tr>
-             </thead>
+             <thead><tr><th>Species</th><th>Name</th><th>Primary</th><th>Cost</th></tr></thead>
              <tbody>
-               <tr><td><strong>A</strong></td><td>Heavy Metal</td><td>Hardness</td><td>8 u</td></tr>
-               <tr><td><strong>B</strong></td><td>Lead/Conductor</td><td>Conductivity</td><td>6 u</td></tr>
-               <tr><td><strong>C</strong></td><td>Ceramic Oxide</td><td>Thermal Resistance</td><td>4 u</td></tr>
-               <tr><td><strong>P</strong></td><td>Structural Polymer</td><td>Elasticity</td><td>2 u</td></tr>
+               <tr><td><strong>A</strong></td><td>Metal</td><td>Hardness</td><td>8</td></tr>
+               <tr><td><strong>B</strong></td><td>Conductor</td><td>Conductivity</td><td>6</td></tr>
+               <tr><td><strong>C</strong></td><td>Ceramic</td><td>Thermal Res.</td><td>4</td></tr>
+               <tr><td><strong>P</strong></td><td>Polymer</td><td>Elasticity</td><td>2</td></tr>
              </tbody>
            </table>
          </div>
        </section>
-
        <section>
-         <h2>Scoring & Reward Formula</h2>
-         <p>The total reward is calculated after every operation using a complex scientific rubric:</p>
-         <code>
-           R = 0.50 * match_score + 0.25 * packing_stability + 0.15 * symmetry + 0.10 * phase_bonus - cost_pen
-         </code>
-         <ul>
-           <li><strong>Match Score</strong>: Proximity to the target property levels.</li>
-           <li><strong>Packing Stability</strong>: Rewarded for consistent atomic neighbors.</li>
-           <li><strong>Phase Bonus</strong>: Extra reward for reaching <em>Crystalline</em> or <em>Polycrystalline</em> states.</li>
-         </ul>
+         <h2>Reward Formula</h2>
+         <code>R = 0.50 × match + 0.25 × stability + 0.15 × symmetry + 0.10 × phase − cost_penalty</code>
        </section>
     </div>
   </div>
@@ -260,63 +253,45 @@
   <div id="tab-api" class="tab-content">
     <div class="doc-container">
       <section>
-        <h2>Programmatic Access</h2>
-        <p>The laboratory exposes a RESTful API for automated AI agents. Full OpenAPI documentation is available at <a href="/playground/docs" target="_blank">/playground/docs</a>.</p>
-        
-        <h3>1. Initialize Session</h3>
-        <pre><code>POST /reset
-{
-  "scenario_name": "diamond-like",
-  "difficulty": "medium"
-}</code></pre>
-
-        <h3>2. Execute Atomic Placement</h3>
-        <pre><code>POST /step
-{
-  "action_type": "place",
-  "row": 0, "col": 0,
-  "atom": "A"
-}</code></pre>
-
-        <h3>3. Real-time Telemetry</h3>
-        <pre><code>GET /state</code></pre>
+        <h2>REST API</h2>
+        <h3>POST /reset</h3>
+        <pre><code>{ "scenario_name": "diamond-like", "difficulty": "medium" }</code></pre>
+        <h3>POST /step</h3>
+        <pre><code>{ "action": { "action_type": "place", "row": 0, "col": 0, "atom": "A" } }</code></pre>
+        <h3>GET /state</h3>
+        <pre><code>Returns current observation</code></pre>
+        <p>Full OpenAPI docs at <a href="/docs" target="_blank">/docs</a></p>
       </section>
     </div>
   </div>
 
-  <!-- ── ANALYTICS & BENCHMARKS TAB ── -->
+  <!-- ── ANALYTICS TAB ── -->
   <div id="tab-analytics" class="tab-content">
     <div class="doc-container" style="max-width: 1200px;">
       <section>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-          <h2>Laboratory Discovery Analytics</h2>
-          <button class="btn btn-secondary" style="width: auto; padding: 10px 24px;" onclick="loadBenchmarks()">REFRESH ANALYTICS DATA</button>
+          <h2>Analytics</h2>
+          <button class="btn btn-secondary" style="width: auto; padding: 8px 20px;" onclick="loadBenchmarks()">REFRESH</button>
         </div>
-        <p>Results aggregated from multiple autonomous RL-Agent episodes. Benchmarks help visualize the agent's ability to reach higher-order structural phases.</p>
-        
         <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px;">
           <div class="chart-card">
-            <div class="chart-label">Structural Phase Distribution</div>
-            <div style="height: 380px;">
-              <canvas id="phase-pie-chart"></canvas>
-            </div>
+            <div class="chart-label">Phase Distribution</div>
+            <div style="height: 300px;"><canvas id="phase-pie-chart"></canvas></div>
           </div>
           <div class="chart-card">
-            <div class="chart-label">Scenario Performance (Optimal Reward vs. Cost)</div>
-            <div style="height: 380px;">
-              <canvas id="scenario-bar-chart"></canvas>
-            </div>
+            <div class="chart-label">Scenario Performance</div>
+            <div style="height: 300px;"><canvas id="scenario-bar-chart"></canvas></div>
           </div>
         </div>
-        <div id="benchmark-status" class="log-ts" style="margin-top: 15px; font-family: var(--mono); color: var(--text-2);">No benchmarks loaded. Awaiting agent execution...</div>
+        <div id="benchmark-status" class="log-ts" style="margin-top: 15px; font-family: var(--mono); color: var(--text-2);">No benchmarks loaded.</div>
       </section>
     </div>
   </div>
 
   <footer>
     <div class="bottom-bar">
-      <span>Discovery Engine 2.1 — Powered by OpenEnv</span>
-      <span style="margin-left: auto;">Laboratory Key: <kbd>Shift</kbd>+<kbd>Enter</kbd> (Bulk step), <kbd>R</kbd> (Reset)</span>
+      <span>MaterialForge v3.0 — OpenEnv RL Environment</span>
+      <span id="episode-id" style="margin-left: auto; color: var(--text-3);"></span>
     </div>
   </footer>
 

@@ -16,7 +16,7 @@ class MaterialForgeEnv(EnvClient[MaterialForgeAction, MaterialForgeObservation, 
     Each client instance has its own dedicated environment session.
 
     Example:
-        >>> with MaterialForgeEnv(base_url="http://localhost:7860") as client:
+        >>> with MaterialForgeEnv(base_url="http://localhost:8000") as client:
         ...     result = client.reset()
         ...     print(result.observation.grid)
         ...     action = MaterialForgeAction(action_type="place", row=0, col=0, atom="A")
