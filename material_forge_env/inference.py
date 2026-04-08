@@ -557,9 +557,10 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
 async def main() -> None:
     """Run the benchmark tasks using a simple LLM baseline policy."""
     if HF_TOKEN is None:
-        raise ValueError("HF_TOKEN environment variable is required")
-
-    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+        print("[DEBUG] HF_TOKEN not set, running fallback agent", flush=True)
+        client = None
+    else:
+        client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
     try:
         if SPACE_URL:
@@ -575,6 +576,12 @@ async def main() -> None:
 
     except Exception as e:
         print(f"[DEBUG] Failed to start environment: {e}", flush=True)
+
+        # Emit minimal structured output so validator can parse results
+        for task in TASKS:
+            log_start(task=task["name"], env=BENCHMARK, model=MODEL_NAME)
+            log_end(success=False, steps=0, rewards=[])
+
         return
 
     try:
