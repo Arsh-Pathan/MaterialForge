@@ -51,7 +51,7 @@ except ImportError:
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 
 IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "material-forge-env:latest")
 SPACE_URL = os.getenv("SPACE_URL")
@@ -556,7 +556,7 @@ async def run_task(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
 
 async def main() -> None:
     """Run the benchmark tasks using a simple LLM baseline policy."""
-    API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+    API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 
     client = OpenAI(
         base_url=API_BASE_URL,
