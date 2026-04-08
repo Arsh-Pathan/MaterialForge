@@ -3,19 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MaterialForge — Discovery Lab</title>
+  <title>MaterialForge - Discovery Lab</title>
   <meta name="description" content="AI-driven atomic crystal structure design lab for reinforcement learning." />
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/playground/styles.css?v=20260408d">
-  
+  <link rel="stylesheet" href="/playground/styles.css?v=20260408f">
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-
-  <!-- Loading Screen -->
   <div id="loading-overlay" class="loading-overlay">
     <div class="spinner"></div>
     <div style="font-size: 13px; color: var(--text-2); font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;">INITIALIZING LAB...</div>
@@ -32,7 +30,8 @@
 
     <nav class="nav-tabs">
       <button class="nav-tab active" data-tab="playground" onclick="switchTab(this)">PLAYGROUND</button>
-      <button class="nav-tab" data-tab="docs" onclick="switchTab(this)">DOCS</button>
+      <button class="nav-tab" data-tab="overview" onclick="switchTab(this)">OVERVIEW</button>
+      <button class="nav-tab" data-tab="readme" onclick="switchTab(this)">README</button>
       <button class="nav-tab" data-tab="api" onclick="switchTab(this)">API</button>
       <button class="nav-tab" data-tab="analytics" onclick="switchTab(this)">ANALYTICS</button>
     </nav>
@@ -44,10 +43,8 @@
     </div>
   </header>
 
-  <!-- ── PLAYGROUND TAB ── -->
   <div id="tab-playground" class="tab-content active">
     <div class="app">
-      <!-- KPI Strip -->
       <div class="kpi-strip">
         <div class="kpi-card">
           <div class="kpi-label">Step</div>
@@ -63,7 +60,7 @@
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Phase</div>
-          <div id="kpi-phase" class="kpi-value phase-amorphous">—</div>
+          <div id="kpi-phase" class="kpi-value phase-amorphous">-</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Atoms</div>
@@ -75,7 +72,6 @@
         </div>
       </div>
 
-      <!-- MAIN CONTENT (left) — Lattice + Properties + Chart -->
       <main class="main">
         <div class="viz-area">
           <div class="viz-row-top">
@@ -138,21 +134,20 @@
                   <div class="prop-bar-bg"><div id="pt-elasticity" class="prop-bar-target"></div><div id="pb-elasticity" class="prop-bar-fill" style="background: var(--atom-P); width: 0%"></div></div>
                 </div>
               </div>
-              
+
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                 <div class="field">
-                   <label>Stability: <span id="sc-stability" class="prop-vals">0</span></label>
-                   <div class="prop-bar-bg" style="height:4px;"><div id="sb-stability" class="prop-bar-fill" style="background:var(--accent2); width:0%"></div></div>
-                 </div>
-                 <div class="field">
-                   <label>Symmetry: <span id="sc-quality" class="prop-vals">0</span></label>
-                   <div class="prop-bar-bg" style="height:4px;"><div id="sb-quality" class="prop-bar-fill" style="background:var(--accent3); width:0%"></div></div>
-                 </div>
-               </div>
+                <div class="field">
+                  <label>Stability: <span id="sc-stability" class="prop-vals">0</span></label>
+                  <div class="prop-bar-bg" style="height:4px;"><div id="sb-stability" class="prop-bar-fill" style="background:var(--accent2); width:0%"></div></div>
+                </div>
+                <div class="field">
+                  <label>Symmetry: <span id="sc-quality" class="prop-vals">0</span></label>
+                  <div class="prop-bar-bg" style="height:4px;"><div id="sb-quality" class="prop-bar-fill" style="background:var(--accent3); width:0%"></div></div>
+                </div>
+              </div>
             </section>
           </div>
 
-          <!-- Reward Chart -->
           <div class="chart-card" style="min-height: 160px;">
             <div class="chart-label">Reward Convergence</div>
             <div style="flex: 1; min-height: 0;">
@@ -162,7 +157,6 @@
         </div>
       </main>
 
-      <!-- SIDEBAR (right) — Controls -->
       <aside class="sidebar">
         <div class="panel">
           <div class="panel-title">Setup</div>
@@ -192,16 +186,16 @@
           <div class="panel-title">Workbench</div>
           <div class="fields">
             <div class="workbench-grid">
-               <div class="workbench-card">
-                 <span class="summary-label">Selected Cell</span>
-                 <span id="selected-cell" class="summary-value">0, 0</span>
-               </div>
-               <div class="workbench-card">
-                 <span class="summary-label">Click Mode</span>
-                 <span class="summary-value">Direct</span>
-               </div>
+              <div class="workbench-card">
+                <span class="summary-label">Selected Cell</span>
+                <span id="selected-cell" class="summary-value">0, 0</span>
+              </div>
+              <div class="workbench-card">
+                <span class="summary-label">Click Mode</span>
+                <span class="summary-value">Direct</span>
+              </div>
             </div>
-            
+
             <div class="field">
               <label>Controls</label>
               <div class="control-note">
@@ -240,55 +234,243 @@
         <div class="panel" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
           <div class="panel-title">Log</div>
           <div id="log-box" class="log-box" style="flex: 1;">
-             <div class="log-entry">Awaiting session...</div>
+            <div class="log-entry">Awaiting session...</div>
           </div>
         </div>
       </aside>
     </div>
   </div>
 
-  <!-- ── DOCS TAB ── -->
-  <div id="tab-docs" class="tab-content">
+  <div id="tab-overview" class="tab-content">
     <div class="doc-container">
-       <section>
-         <h2>Benchmark Specifications</h2>
-         <p>MaterialForge is an RL benchmark for inverse materials discovery. Agents design an 8×8 atomic lattice to reproduce target macro-properties.</p>
-         <div class="table-wrap">
-           <table>
-             <thead><tr><th>Species</th><th>Name</th><th>Primary</th><th>Cost</th></tr></thead>
-             <tbody>
-               <tr><td><strong>A</strong></td><td>Metal</td><td>Hardness</td><td>8</td></tr>
-               <tr><td><strong>B</strong></td><td>Conductor</td><td>Conductivity</td><td>6</td></tr>
-               <tr><td><strong>C</strong></td><td>Ceramic</td><td>Thermal Res.</td><td>4</td></tr>
-               <tr><td><strong>P</strong></td><td>Polymer</td><td>Elasticity</td><td>2</td></tr>
-             </tbody>
-           </table>
-         </div>
-       </section>
-       <section>
-         <h2>Reward Formula</h2>
-         <code>R = 0.50 × match + 0.25 × stability + 0.15 × symmetry + 0.10 × phase − cost_penalty</code>
-       </section>
-    </div>
-  </div>
+      <section class="doc-hero">
+        <span class="eyebrow">OpenEnv Hackathon Submission</span>
+        <h1 class="hero-title">Inverse materials design in a compact, inspectable RL environment</h1>
+        <p class="hero-text">
+          MaterialForge turns materials discovery into an interactive lattice-construction problem. The agent must build
+          a believable atomic arrangement that matches target macro-properties while respecting step and cost constraints.
+        </p>
+        <div class="hero-grid">
+          <div class="stat-tile">
+            <span class="summary-label">Grid</span>
+            <span class="summary-value">8 x 8</span>
+          </div>
+          <div class="stat-tile">
+            <span class="summary-label">Atom Types</span>
+            <span class="summary-value">4</span>
+          </div>
+          <div class="stat-tile">
+            <span class="summary-label">Baseline Runs</span>
+            <span id="bm-total-runs" class="summary-value">--</span>
+          </div>
+          <div class="stat-tile">
+            <span class="summary-label">Avg Best Reward</span>
+            <span id="bm-avg-best" class="summary-value">--</span>
+          </div>
+        </div>
+      </section>
 
-  <!-- ── API TAB ── -->
-  <div id="tab-api" class="tab-content">
-    <div class="doc-container">
+      <section class="doc-grid">
+        <article class="info-card">
+          <span class="eyebrow">Why this benchmark</span>
+          <h2>Design intent</h2>
+          <p>The environment is meant to show scenario design, reward shaping, and agent interaction quality in a space that can be understood visually. Each atom choice affects both local structure and global material properties.</p>
+          <div class="badge-row">
+            <span class="pill">8x8 state space</span>
+            <span class="pill">Cost constrained</span>
+            <span class="pill">Scenario driven</span>
+          </div>
+        </article>
+        <article class="info-card">
+          <span class="eyebrow">Live demo behavior</span>
+          <h2>What judges can inspect</h2>
+          <p>The playground exposes step-by-step lattice editing, reward movement, phase changes, and property traces. That makes the benchmark easier to evaluate than a hidden backend-only environment.</p>
+          <div class="badge-row">
+            <span class="pill">Direct placement</span>
+            <span class="pill">Persistent session</span>
+            <span class="pill">Visual telemetry</span>
+          </div>
+        </article>
+      </section>
+
       <section>
-        <h2>REST API</h2>
-        <h3>POST /reset</h3>
-        <pre><code>{ "scenario_name": "diamond-like", "difficulty": "medium" }</code></pre>
-        <h3>POST /step</h3>
-        <pre><code>{ "action": { "action_type": "place", "row": 0, "col": 0, "atom": "A" } }</code></pre>
-        <h3>GET /state</h3>
-        <pre><code>Returns current observation</code></pre>
-        <p>Full OpenAPI docs at <a href="/docs" target="_blank">/docs</a></p>
+        <h2>Environment Snapshot</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Species</th><th>Name</th><th>Primary Property</th><th>Cost</th><th>Typical Use</th></tr></thead>
+            <tbody>
+              <tr><td><strong>A</strong></td><td>Metal</td><td>Hardness</td><td>8</td><td>Structural backbone</td></tr>
+              <tr><td><strong>B</strong></td><td>Conductor</td><td>Conductivity</td><td>6</td><td>Electrical tuning</td></tr>
+              <tr><td><strong>C</strong></td><td>Ceramic</td><td>Thermal resistance</td><td>4</td><td>Heat shielding</td></tr>
+              <tr><td><strong>P</strong></td><td>Polymer</td><td>Elasticity</td><td>2</td><td>Flexible support</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-grid">
+        <article class="info-card">
+          <span class="eyebrow">Scenarios</span>
+          <h2>Task families</h2>
+          <p><strong>diamond-like</strong> emphasizes hardness and thermal resistance. <strong>conductor</strong> prioritizes conductivity. <strong>heat-shield</strong> focuses on thermal performance and stable structure formation.</p>
+        </article>
+        <article class="info-card">
+          <span class="eyebrow">Reward</span>
+          <h2>What the agent is optimizing</h2>
+          <p>Reward combines property match, stability, lattice quality, and phase bonus, then subtracts cost pressure. This encourages good materials rather than just dense grids.</p>
+        </article>
+      </section>
+
+      <section>
+        <h2>Reward Formula</h2>
+        <pre><code>reward = 0.50 * property_match
+       + 0.25 * stability
+       + 0.15 * lattice_quality
+       + 0.10 * phase_bonus
+       - cost_penalty</code></pre>
+      </section>
+
+      <section class="doc-grid">
+        <article class="info-card">
+          <span class="eyebrow">Benchmark Evidence</span>
+          <h2>Recorded baseline episodes</h2>
+          <p>We logged multiple LLM-guided baseline runs and surfaced them in the analytics tab. That gives the submission concrete traces and scenario-level behavior, not just static environment code.</p>
+        </article>
+        <article class="info-card">
+          <span class="eyebrow">Top observed run</span>
+          <h2>Best snapshot</h2>
+          <p id="bm-best-run">Loading benchmark summary...</p>
+        </article>
       </section>
     </div>
   </div>
 
-  <!-- ── ANALYTICS TAB ── -->
+  <div id="tab-readme" class="tab-content">
+    <div class="doc-container">
+      <section class="doc-hero">
+        <span class="eyebrow">Repository Guide</span>
+        <h1 class="hero-title">What this project is and how to use it</h1>
+        <p class="hero-text">
+          This tab lifts the important parts of the project README into the Space so someone can understand the benchmark,
+          the client flow, and the intended usage without opening the repo first.
+        </p>
+      </section>
+
+      <section class="readme-grid">
+        <article class="info-card">
+          <h2>Quick Start</h2>
+          <pre><code>from material_forge_env import MaterialForgeAction, MaterialForgeEnv
+
+with MaterialForgeEnv(base_url="https://arshpathan-material-forge-env.hf.space") as env:
+    result = env.reset()
+    action = MaterialForgeAction(action_type="place", row=0, col=0, atom="A")
+    result = env.step(action)</code></pre>
+        </article>
+        <article class="info-card">
+          <h2>Core Loop</h2>
+          <p>1. Reset with a scenario and difficulty.</p>
+          <p>2. Place, replace, or remove atoms on the lattice.</p>
+          <p>3. Observe reward, phase, current properties, and score breakdown.</p>
+          <p>4. Stop when the target is hit or the budget is spent.</p>
+        </article>
+      </section>
+
+      <section>
+        <h2>Observation Space</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>grid</code></td><td>8x8 lattice with atom symbols or <code>.</code> for empty cells</td></tr>
+              <tr><td><code>target</code></td><td>Desired material properties for the active episode</td></tr>
+              <tr><td><code>current_properties</code></td><td>Estimated macro-properties from the current arrangement</td></tr>
+              <tr><td><code>phase</code></td><td>Current phase classification such as amorphous or crystalline</td></tr>
+              <tr><td><code>score_breakdown</code></td><td>Supporting terms for reward interpretation</td></tr>
+              <tr><td><code>reward</code></td><td>Scalar feedback after the latest action</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-grid">
+        <article class="info-card">
+          <span class="eyebrow">Difficulty ladder</span>
+          <h2>Why three difficulty levels exist</h2>
+          <p>Easy gives more budget headroom for exploration. Medium is the default interactive profile. Hard reduces both budget and tolerance so the agent has less room to waste actions.</p>
+        </article>
+        <article class="info-card">
+          <span class="eyebrow">Submission notes</span>
+          <h2>Hackathon alignment</h2>
+          <p>The repository includes root-level inference, documented schemas, a custom UI, and a Hugging Face deployment path. The goal is a strong environment submission with a clear demo, not just a backend API.</p>
+        </article>
+      </section>
+
+      <section>
+        <h2>Project Links</h2>
+        <div class="link-list">
+          <a href="/docs" target="_blank">OpenAPI docs</a>
+          <a href="https://huggingface.co/spaces/ArshPathan/material_forge_env" target="_blank">Hugging Face Space</a>
+          <a href="https://github.com/Arsh-Pathan/MaterialForge" target="_blank">GitHub repository</a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="tab-api" class="tab-content">
+    <div class="doc-container">
+      <section class="doc-hero">
+        <span class="eyebrow">Interface Reference</span>
+        <h1 class="hero-title">HTTP for docs and health, WebSocket for persistent interaction</h1>
+        <p class="hero-text">
+          The live playground uses a persistent WebSocket session at <code>/ws</code> so state survives between clicks.
+          HTTP endpoints still expose schema, health, and standard API documentation for external integrations.
+        </p>
+      </section>
+
+      <section class="doc-grid">
+        <article class="info-card">
+          <span class="eyebrow">WebSocket session</span>
+          <h2>Message examples</h2>
+          <pre><code>{ "type": "reset", "data": { "scenario_name": "diamond-like", "difficulty": "medium" } }
+{ "type": "step", "data": { "action_type": "place", "row": 4, "col": 4, "atom": "A" } }</code></pre>
+        </article>
+        <article class="info-card">
+          <span class="eyebrow">HTTP endpoints</span>
+          <h2>Reference routes</h2>
+          <pre><code>GET  /health
+GET  /schema
+GET  /docs
+GET  /openapi.json
+GET  /redoc</code></pre>
+        </article>
+      </section>
+
+      <section>
+        <h2>Action Model</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td><code>action_type</code></td><td><code>place | replace | remove</code></td><td>Lattice operation to apply</td></tr>
+              <tr><td><code>row</code></td><td><code>0-7</code></td><td>Target row</td></tr>
+              <tr><td><code>col</code></td><td><code>0-7</code></td><td>Target column</td></tr>
+              <tr><td><code>atom</code></td><td><code>A | B | C | P</code></td><td>Required for place and replace</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>References</h2>
+        <div class="link-list">
+          <a href="/docs" target="_blank">Swagger UI</a>
+          <a href="/redoc" target="_blank">ReDoc</a>
+          <a href="/schema" target="_blank">Combined schema</a>
+        </div>
+      </section>
+    </div>
+  </div>
+
   <div id="tab-analytics" class="tab-content">
     <div class="doc-container" style="max-width: 1200px;">
       <section>
@@ -296,6 +478,26 @@
           <h2>Analytics</h2>
           <button class="btn btn-secondary" style="width: auto; padding: 8px 20px;" onclick="loadBenchmarks()">REFRESH</button>
         </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="summary-label">Episodes</span>
+            <span id="analytics-total" class="summary-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="summary-label">Avg Best Reward</span>
+            <span id="analytics-avg-best" class="summary-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="summary-label">Avg Final Reward</span>
+            <span id="analytics-avg-final" class="summary-value">--</span>
+          </div>
+          <div class="metric-card">
+            <span class="summary-label">Budget Overruns</span>
+            <span id="analytics-budget-hit" class="summary-value">--</span>
+          </div>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px;">
           <div class="chart-card">
             <div class="chart-label">Phase Distribution</div>
@@ -306,6 +508,30 @@
             <div style="height: 300px;"><canvas id="scenario-bar-chart"></canvas></div>
           </div>
         </div>
+
+        <div class="doc-grid" style="margin-top: 24px;">
+          <article class="info-card">
+            <span class="eyebrow">Insights</span>
+            <h2>Observed baseline behavior</h2>
+            <div id="benchmark-insights" class="insight-stack">
+              <p>Loading benchmark insights...</p>
+            </div>
+          </article>
+          <article class="info-card">
+            <span class="eyebrow">Interpretation</span>
+            <h2>What this data says</h2>
+            <p>The baseline often discovers strong intermediate structures quickly, then loses reward when cost pressure or overbuilding starts to dominate. That pattern is useful because it shows the environment is producing nontrivial trajectories.</p>
+          </article>
+        </div>
+
+        <div class="table-wrap" style="margin-top: 24px;">
+          <table>
+            <thead><tr><th>Scenario</th><th>Difficulty</th><th>Best Reward</th><th>Final Reward</th><th>Phase</th><th>Cost</th><th>Steps</th></tr></thead>
+            <tbody id="benchmark-table-body">
+              <tr><td colspan="7">Loading benchmark table...</td></tr>
+            </tbody>
+          </table>
+        </div>
         <div id="benchmark-status" class="log-ts" style="margin-top: 15px; font-family: var(--mono); color: var(--text-2);">No benchmarks loaded.</div>
       </section>
     </div>
@@ -313,19 +539,19 @@
 
   <footer>
     <div class="bottom-bar">
-      <span>MaterialForge v3.0 — OpenEnv RL Environment</span>
+      <span>MaterialForge v3.0 - OpenEnv RL Environment</span>
       <span id="episode-id" style="margin-left: auto; color: var(--text-3);"></span>
     </div>
   </footer>
 
   <div id="toast" class="toast">Action recorded</div>
 
-  <script src="/playground/app.js?v=20260408d"></script>
+  <script src="/playground/app.js?v=20260408f"></script>
   <script>
     function switchTab(btn) {
       const targetId = 'tab-' + btn.dataset.tab;
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t === btn));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === targetId));
+      document.querySelectorAll('.nav-tab').forEach((t) => t.classList.toggle('active', t === btn));
+      document.querySelectorAll('.tab-content').forEach((c) => c.classList.toggle('active', c.id === targetId));
     }
   </script>
 </body>

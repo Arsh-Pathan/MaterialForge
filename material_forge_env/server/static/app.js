@@ -458,7 +458,16 @@ class MaterialForgeApp {
 
   /* ── Charts ── */
   setupCharts() {
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    Chart.defaults.plugins.legend.labels.boxHeight = 8;
+
     const rewardChartCtx = document.getElementById('reward-chart').getContext('2d');
+    const rewardGradient = rewardChartCtx.createLinearGradient(0, 0, 0, 180);
+    rewardGradient.addColorStop(0, 'rgba(0,212,170,0.30)');
+    rewardGradient.addColorStop(1, 'rgba(0,212,170,0.02)');
     this.rewardChart = new Chart(rewardChartCtx, {
       type: 'line',
       data: {
@@ -466,20 +475,41 @@ class MaterialForgeApp {
         datasets: [{
           data: [],
           borderColor: '#00d4aa',
-          backgroundColor: 'rgba(0,212,170,0.08)',
+          backgroundColor: rewardGradient,
           fill: true,
           tension: 0.35,
-          pointRadius: 3,
-          borderWidth: 2
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          borderWidth: 2.5
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            borderColor: 'rgba(148,163,184,0.18)',
+            borderWidth: 1,
+            displayColors: false,
+            callbacks: {
+              label: (ctx) => `Reward ${Number(ctx.parsed.y).toFixed(3)}`
+            }
+          }
+        },
         scales: {
-          x: { grid: { color: 'rgba(30,45,69,0.3)' }, ticks: { font: { size: 10 } } },
-          y: { min: -0.05, max: 1.05, grid: { color: 'rgba(30,45,69,0.3)' }, ticks: { font: { size: 10 } } }
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: {
+            min: -0.05,
+            max: 1.05,
+            grid: { color: 'rgba(30,45,69,0.3)' },
+            ticks: {
+              font: { size: 10 },
+              callback: (value) => Number(value).toFixed(1)
+            }
+          }
         }
       }
     });
@@ -548,9 +578,35 @@ async function loadBenchmarks() {
     const res = await fetch('/playground/benchmarks.json');
     if (!res.ok) throw new Error('Benchmark data not found. Please run agent_benchmark.py');
     const data = await res.json();
-    
-    status.textContent = `Successfully loaded ${data.length} discovery episodes. Updating visualization...`;
-    
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error('Benchmark dataset is empty');
+    }
+
+    const average = (values) => values.reduce((sum, value) => sum + value, 0) / (values.length || 1);
+    const avgBest = average(data.map((run) => run.best_reward));
+    const avgFinal = average(data.map((run) => run.final_reward));
+    const overruns = data.filter((run) => run.total_cost > run.cost_budget).length;
+    const bestRun = data.reduce((best, run) => (run.best_reward > best.best_reward ? run : best), data[0]);
+    const topPhase = Object.entries(data.reduce((acc, run) => {
+      acc[run.phase] = (acc[run.phase] || 0) + 1;
+      return acc;
+    }, {})).sort((a, b) => b[1] - a[1])[0];
+
+    const setText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+
+    setText('bm-total-runs', String(data.length));
+    setText('bm-avg-best', avgBest.toFixed(3));
+    setText('bm-best-run', `${bestRun.scenario} (${bestRun.difficulty}) reached ${bestRun.best_reward.toFixed(3)} in ${bestRun.steps} steps and finished in phase ${bestRun.phase}.`);
+    setText('analytics-total', String(data.length));
+    setText('analytics-avg-best', avgBest.toFixed(3));
+    setText('analytics-avg-final', avgFinal.toFixed(3));
+    setText('analytics-budget-hit', `${overruns} / ${data.length}`);
+
+    status.textContent = `Loaded ${data.length} benchmark episodes. Dominant phase: ${topPhase ? `${topPhase[0]} (${topPhase[1]})` : 'n/a'}.`;
+
     // 1. Phase Distribution (Pie)
     const phases = data.reduce((acc, run) => {
       acc[run.phase] = (acc[run.phase] || 0) + 1;
@@ -559,16 +615,33 @@ async function loadBenchmarks() {
     
     if (window.phaseChart) window.phaseChart.destroy();
     window.phaseChart = new Chart(document.getElementById('phase-pie-chart'), {
-      type: 'pie',
+      type: 'doughnut',
       data: {
         labels: Object.keys(phases),
         datasets: [{
           data: Object.values(phases),
           backgroundColor: ['#00d4aa', '#3b82f6', '#f59e0b', '#8b5cf6'],
-          borderWidth: 0
+          borderColor: '#111823',
+          borderWidth: 3,
+          hoverOffset: 6
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Inter' } } } } }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '58%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 16 } },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            borderColor: 'rgba(148,163,184,0.18)',
+            borderWidth: 1,
+            callbacks: {
+              label: (ctx) => `${ctx.label}: ${ctx.parsed} runs`
+            }
+          }
+        }
+      }
     });
 
     // 2. Scenario Performance (Bar)
@@ -576,22 +649,116 @@ async function loadBenchmarks() {
     window.barChart = new Chart(document.getElementById('scenario-bar-chart'), {
       type: 'bar',
       data: {
-        labels: data.map(r => `${r.scenario} (${r.difficulty})`),
+        labels: data.map((r) => `${r.scenario} · ${r.difficulty}`),
         datasets: [
-          { label: 'Optimal Reward', data: data.map(r => r.best_reward), backgroundColor: '#00d4aa' },
-          { label: 'Cost %', data: data.map(r => r.total_cost / 1.2), backgroundColor: 'rgba(59, 130, 246, 0.4)' }
+          {
+            label: 'Best Reward',
+            data: data.map((r) => r.best_reward),
+            backgroundColor: '#00d4aa',
+            borderRadius: 10,
+            barPercentage: 0.7,
+            categoryPercentage: 0.7,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Final Reward',
+            data: data.map((r) => r.final_reward),
+            backgroundColor: '#3b82f6',
+            borderRadius: 10,
+            barPercentage: 0.7,
+            categoryPercentage: 0.7,
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: 'Budget Used %',
+            data: data.map((r) => (r.total_cost / r.cost_budget) * 100),
+            borderColor: '#f59e0b',
+            backgroundColor: '#f59e0b',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.3,
+            borderWidth: 2,
+            yAxisID: 'yBudget'
+          }
         ]
       },
       options: { 
         responsive: true, 
         maintainAspectRatio: false, 
+        interaction: { intersect: false, mode: 'index' },
         scales: { 
-          y: { grid: { color: 'rgba(30,45,69,0.3)' }, ticks: { color: '#64748b' } },
-          x: { grid: { display : false }, ticks: { color: '#64748b', font: { size: 10 } } }
+          y: {
+            min: 0,
+            max: 1,
+            position: 'left',
+            title: { display: true, text: 'Reward' },
+            grid: { color: 'rgba(30,45,69,0.3)' },
+            ticks: {
+              color: '#64748b',
+              callback: (value) => Number(value).toFixed(1)
+            }
+          },
+          yBudget: {
+            min: 0,
+            max: Math.max(140, ...data.map((r) => Math.ceil(((r.total_cost / r.cost_budget) * 100) / 10) * 10)),
+            position: 'right',
+            title: { display: true, text: 'Budget %' },
+            grid: { display: false },
+            ticks: {
+              color: '#f59e0b',
+              callback: (value) => `${value}%`
+            }
+          },
+          x: {
+            grid: { display : false },
+            ticks: { color: '#64748b', font: { size: 10 } }
+          }
         },
-        plugins: { legend: { labels: { color: '#94a3b8' } } }
+        plugins: {
+          legend: { labels: { color: '#94a3b8', padding: 16 } },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            borderColor: 'rgba(148,163,184,0.18)',
+            borderWidth: 1,
+            callbacks: {
+              label: (ctx) => {
+                if (ctx.dataset.yAxisID === 'yBudget') {
+                  return `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(0)}%`;
+                }
+                return `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(3)}`;
+              }
+            }
+          }
+        }
       }
     });
+
+    const insights = [
+      `Best observed run: ${bestRun.scenario} on ${bestRun.difficulty} difficulty with reward ${bestRun.best_reward.toFixed(3)}.`,
+      `${overruns} of ${data.length} recorded episodes exceeded the nominal budget, which shows the cost penalty is active.`,
+      `Average best reward is ${avgBest.toFixed(3)} while average final reward is ${avgFinal.toFixed(3)}, so later-step degradation is visible in the baseline traces.`
+    ];
+
+    const insightBox = document.getElementById('benchmark-insights');
+    if (insightBox) {
+      insightBox.innerHTML = insights.map((item) => `<div class="insight-item">${item}</div>`).join('');
+    }
+
+    const tableBody = document.getElementById('benchmark-table-body');
+    if (tableBody) {
+      tableBody.innerHTML = data.map((run) => `
+        <tr>
+          <td>${run.scenario}</td>
+          <td>${run.difficulty}</td>
+          <td>${run.best_reward.toFixed(3)}</td>
+          <td>${run.final_reward.toFixed(3)}</td>
+          <td>${run.phase}</td>
+          <td>${run.total_cost.toFixed(0)} / ${run.cost_budget.toFixed(0)}</td>
+          <td>${run.steps}</td>
+        </tr>
+      `).join('');
+    }
 
   } catch (e) {
     status.textContent = `Notice: ${e.message}`;

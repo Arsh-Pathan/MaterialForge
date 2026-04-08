@@ -258,11 +258,11 @@ header {
 
 /* Chart Cards */
 .chart-card {
-  background: var(--bg-panel);
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid var(--bg-border);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(180deg, rgba(22, 31, 45, 0.96), rgba(13, 19, 29, 0.96));
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid rgba(148,163,184,0.10);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.28);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -445,11 +445,143 @@ input[type="range"] { padding: 0; }
 .doc-container h3 { font-size: 16px; margin-top: 24px; color: var(--text-1); text-transform: uppercase; letter-spacing: 1px; }
 .doc-container p { color: var(--text-2); margin-bottom: 16px; }
 
+.doc-hero {
+  padding: 28px;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(0, 212, 170, 0.16), transparent 30%),
+    linear-gradient(180deg, rgba(17, 24, 35, 0.95), rgba(10, 14, 20, 0.96));
+  border: 1px solid var(--bg-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.hero-title {
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.08;
+  letter-spacing: -1.3px;
+  margin-bottom: 14px;
+}
+
+.hero-text {
+  max-width: 760px;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text-2);
+}
+
+.hero-grid,
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.stat-tile,
+.metric-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(12, 18, 28, 0.92), rgba(8, 12, 20, 0.82));
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.doc-grid,
+.readme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.info-card {
+  padding: 22px;
+  border-radius: 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--bg-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.info-card h2 {
+  margin-bottom: 10px;
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pill {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(0, 212, 170, 0.08);
+  border: 1px solid rgba(0, 212, 170, 0.18);
+  color: var(--text-1);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.link-list a {
+  color: var(--text-1);
+  text-decoration: none;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--bg-border);
+  transition: border-color 0.2s, transform 0.2s, color 0.2s;
+}
+
+.link-list a:hover {
+  color: var(--accent);
+  border-color: rgba(0, 212, 170, 0.45);
+  transform: translateY(-1px);
+}
+
+.insight-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insight-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(8, 12, 20, 0.68);
+  border: 1px solid rgba(255,255,255,0.05);
+  color: var(--text-2);
+}
+
 .table-wrap { overflow: hidden; border-radius: 8px; border: 1px solid var(--bg-border); background: var(--bg-panel); margin: 20px 0; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th { background: rgba(0,0,0,0.2); padding: 12px 16px; text-align: left; color: var(--text-3); font-weight: 700; text-transform: uppercase; font-size: 11px; }
 td { padding: 12px 16px; border-top: 1px solid var(--bg-border); }
 tr:hover { background: rgba(255,255,255,0.02); }
+
+#phase-pie-chart,
+#scenario-bar-chart,
+#reward-chart {
+  filter: saturate(1.05);
+}
 
 code, pre { font-family: var(--mono); background: #000; padding: 4px 8px; border-radius: 4px; font-size: 13px; color: var(--accent2); }
 pre { padding: 16px; display: block; border: 1px solid var(--bg-border); margin: 12px 0; overflow-x: auto; color: #fff; }
@@ -546,6 +678,17 @@ pre { padding: 16px; display: block; border: 1px solid var(--bg-border); margin:
 
   .main {
     padding: 16px;
+  }
+
+  .doc-container {
+    padding: 24px 18px;
+  }
+
+  .hero-grid,
+  .metrics-grid,
+  .doc-grid,
+  .readme-grid {
+    grid-template-columns: 1fr;
   }
 
   .summary-grid,
