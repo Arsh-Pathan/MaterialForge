@@ -1,8 +1,8 @@
 ---
 title: MaterialForge
 emoji: 🔬
-colorFrom: indigo
-colorTo: violet
+colorFrom: red
+colorTo: blue
 sdk: docker
 app_port: 8000
 tags:
@@ -12,86 +12,129 @@ tags:
   - crystal-structure
 ---
 
-# 🔬 MaterialForge
-### AI-Driven Atomic Crystal Structure Engineering
+<div align="center">
+  <img src="server/static/hero.png" width="100%" alt="MaterialForge Hero">
+  <h1>🔬 MaterialForge</h1>
+  <h3>AI-Driven Atomic Crystal Structure Engineering</h3>
+  <p><i>Building the future of materials discovery through advanced reinforcement learning.</i></p>
 
 [![OpenEnv](https://img.shields.io/badge/Framework-OpenEnv-blueviolet?style=for-the-badge)](https://github.com/meta-pytorch/openenv)
 [![License: BSD](https://img.shields.io/badge/License-BSD-green?style=for-the-badge)](LICENSE)
 [![Hackathon: Meta OpenEnv](https://img.shields.io/badge/Hackathon-Meta%20OpenEnv-red?style=for-the-badge)](https://openenv.ai)
 
+</div>
+
 ---
 
-**MaterialForge** is a high-fidelity Reinforcement Learning environment designed for the discovery and optimization of atomic crystal structures. It challenges AI agents to arrange atoms on a lattice grid to achieve precise material properties like **Hardness**, **Conductivity**, and **Thermal Resistance**.
+## 🏗️ Project Overview
 
-## 🚀 Key Features
+**MaterialForge** is a high-fidelity Reinforcement Learning environment designed for the discovery and optimization of atomic crystal structures. Unlike simple grid-worlds, MaterialForge implements complex scientific heuristics that simulate the physical properties of real-world materials.
 
-*   **Advanced Physics Simulation:** Professional-grade heuristics using **Percolation Thresholds** for conductivity, **Positional Entropy** for lattice order, and **Mirror Symmetry** for structural stability.
-*   **Scientific Telemetry:** Real-time dashboard providing deep structural analytics, including **Gibbs-Stability** estimation and **Quadrant Homogeneity** scoring.
-*   **Dynamic Lattice Engine:** 8x8 design space supporting complex Phase Classifications (Crystalline vs. Amorphous).
-*   **Custom Laboratory Dashboard:** High-fidelity interactive UI for real-time visualization of crystalline growth and agent performance.
-*   **Production Ready:** Fully compatible with Meta's OpenEnv validator and Hugging Face Spaces.
+### 🚀 Key Innovations
 
-## 🏗️ The Challenge
+- **Advanced Physics Simulation:** Professional-grade heuristics using **Percolation Thresholds** for conductivity and **Gibbs-Stability** for structural integrity.
+- **Structural regularities:** Measures **Positional Entropy** and **Point-group Symmetry** to evaluate lattice order.
+- **Scientific Telemetry:** A custom laboratory dashboard providing deep analytics into crystalline growth.
 
-In materials science, structure defines function. MaterialForge frames this as an iterative optimization task:
+---
 
-1.  **Objective:** Match a target specification (e.g., "Diamond-like" property vector).
-2.  **Constraints:** Operate within a finite **Cost Budget** and time-sensitive **Step Limit**.
-3.  **Reward:** A complex multi-objective signal balancing structural quality, property accuracy, and material efficiency.
+## 🧪 Scientific Architecture
 
-### Atom Palette
+MaterialForge goes beyond simple placement. It simulates the **Structure-Function relationship** using three core scientific pillars:
 
-| Symbol | Element Type | Role | Cost |
-| :--- | :--- | :--- | :--- |
-| **A** | **Metal** | High Hardness Provider | 8 |
-| **B** | **Conductor** | Signal Efficiency | 6 |
-| **C** | **Ceramic** | Thermal Shielding | 4 |
-| **P** | **Polymer** | Elasticity & Flexibility | 2 |
+### 1. The Physics Pipeline
 
-## 🛠️ Installation & Setup
+```mermaid
+graph LR
+    Lattice[Lattice Grid] --> BFS[BFS Search]
+    BFS --> Percolation{Percolation?}
+    Percolation -- Yes --> Cond[High Conductivity]
+    Percolation -- No --> Ins[Insulating State]
+
+    Lattice --> Symmetry[Mirror Plane Analysis]
+    Symmetry --> Stability[Gibbs Stability Index]
+
+    Lattice --> Entropy[Positional Entropy]
+    Entropy --> Order[Lattice Order Index]
+```
+
+### 2. Atomic Species Data
+
+| Symbol | Element Type  | Role            | Hardness | Conductivity | Thermal | Cost |
+| :----- | :------------ | :-------------- | :------- | :----------- | :------ | :--- |
+| **A**  | **Metal**     | Structural Core | 0.9      | 0.4          | 0.2     | 8    |
+| **B**  | **Conductor** | Signal Sync     | 0.2      | 0.9          | 0.1     | 6    |
+| **C**  | **Ceramic**   | Thermal Plate   | 0.6      | 0.1          | 0.9     | 4    |
+| **P**  | **Polymer**   | Elastic Linker  | 0.1      | 0.2          | 0.3     | 2    |
+
+---
+
+## 📊 Environment Workflow
+
+The environment follows a standard Reinforcement Learning loop, optimized for large-scale evaluation via OpenEnv.
+
+```mermaid
+sequenceDiagram
+    participant Agent as LLM Agent
+    participant MF as MaterialForge Env
+    participant PE as Physics Engine
+
+    Agent->>MF: Action (Place Atom)
+    MF->>PE: Calculate Structural Properties
+    PE-->>MF: Percolation + Symmetry + Entropy
+    MF->>MF: Calculate Reward (Quadratic Cost)
+    MF-->>Agent: Observation + Reward
+```
+
+---
+
+## 🏆 Scoring & Rubric
+
+The grading logic is designed to reward both **Scientific Accuracy** and **Material Efficiency**.
+
+### Reward Formula
+
+$$R = (\alpha \cdot S_{stability} + \beta \cdot L_{order} + \gamma \cdot P_{accuracy}) - \text{Cost}_{quadratic}$$
+
+| Metric              | Scientific Basis                       | Weighting |
+| :------------------ | :------------------------------------- | :-------- |
+| **Stability Index** | Mirror symmetry & coordination bonding | 30%       |
+| **Order Index**     | Homogeneity & sub-lattice entropy      | 20%       |
+| **Property Delta**  | L2-norm distance to target vector      | 40%       |
+| **Efficiency**      | Quadratic penalty for budget overruns  | 10%       |
+
+---
+
+## 🛠️ Getting Started
 
 ### Prerequisites
-*   Python 3.10+
-*   [uv](https://docs.astral.sh/uv/) (Recommended) or `pip`
 
-### Quick Start
+- Python 3.10+
+- [uv](https://docs.astral.sh/uv/) (Recommended)
+
+### Quick Launch
+
 ```bash
-# Clone and enter directory
+# Clone
 git clone https://github.com/Arsh-Pathan/MaterialForge && cd MaterialForge
 
-# Install dependencies and start the environment server
-uv sync
+# Initialize & Run
 uv run server
 ```
 
-## 🧪 Model Inference
-
-To evaluate an agent against the benchmark locally:
+### Inference Test
 
 ```bash
-export API_BASE_URL="http://your-lite-llm-proxy"
+export API_BASE_URL="http://your-proxy"
 export API_KEY="your-key"
 export MODEL_NAME="your-model"
 
 uv run python inference.py
 ```
 
-## 📊 Environment Architecture
-
-MaterialForge is built on the **OpenEnv Core** for robust distributed evaluation.
-
-```mermaid
-graph TD
-    Agent[LLM Agent] -->|MaterialForgeAction| API[FastAPI Server]
-    API -->|Lattice Update| Engine[Lattice Engine]
-    Engine -->|Structural Data| Physics[Advanced Heuristic Physics]
-    Physics -->|Percolation/Entropy| Reward[Reward Rubric]
-    Reward -->|MaterialForgeObservation| Agent
-```
-
 ---
 
 <div align="center">
-  <p>Built with ❤️ by <b>Arsh Pathan</b> for the Meta PyTorch OpenEnv Hackathon</p>
-  <a href="https://huggingface.co/spaces/ArshPathan/material_forge_env">View Live Demo on Hugging Face</a>
+  <p>Developed with ❤️ for the <b>Meta PyTorch OpenEnv Hackathon</b></p>
+  <a href="https://huggingface.co/spaces/ArshPathan/material_forge_env"><b>View Live Lab Demo</b></a>
 </div>

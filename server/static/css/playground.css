@@ -1,0 +1,97 @@
+/* ── PLAYGROUND LAYOUT ── */
+.app {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.kpi-strip {
+  grid-column: 1 / -1;
+  display: flex;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--bg-border);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.kpi-card { padding: 10px 16px; border-right: 1px solid var(--bg-border); flex: 1; min-width: 100px; }
+.kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); font-weight: 700; margin-bottom: 2px; }
+.kpi-value { font-size: 17px; font-weight: 700; font-family: var(--mono); color: var(--accent); }
+
+.main {
+  background: var(--bg-primary);
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  gap: 16px;
+}
+
+.viz-row-top {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(320px, 420px);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.lattice-wrap {
+  background: #080a0f;
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid var(--bg-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  width: min(100%, 540px);
+}
+
+#lattice-canvas {
+  width: min(100%, 380px);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  cursor: crosshair;
+  background: radial-gradient(circle at center, rgba(0,212,170,0.07), transparent 60%);
+}
+
+.interaction-chip {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--text-2);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.atom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.atom-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.atom-btn .symbol {
+  width: 24px; height: 24px;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; color: #fff;
+}
+
+.log-box {
+  height: 100px;
+  overflow-y: auto;
+  background: #000;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: var(--mono);
+  font-size: 9px;
+}

@@ -9,7 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/playground/styles.css?v=20260408f">
+  
+  <!-- Modular CSS Design System -->
+  <link rel="stylesheet" href="/playground/css/theme.css">
+  <link rel="stylesheet" href="/playground/css/components.css">
+  <link rel="stylesheet" href="/playground/css/playground.css">
+  <link rel="stylesheet" href="/playground/css/docs.css">
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -547,7 +552,7 @@ GET  /redoc</code></pre>
 
   <div id="toast" class="toast">Action recorded</div>
 
-  <script src="/playground/app.js?v=20260408f"></script>
+  <script type="module" src="/playground/js/app.js"></script>
   <script>
     function switchTab(btn) {
       const targetId = 'tab-' + btn.dataset.tab;
