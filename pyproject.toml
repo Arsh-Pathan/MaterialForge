@@ -33,16 +33,15 @@ dev = [
 
 [project.scripts]
 # Server entry point - enables running via: uv run --project . server
-# or: python -m material_forge_env.server.app
-server = "material_forge_env.server.app:main"
+# or: python -m server.app
+server = "server.app:main"
 
 [tool.setuptools]
 include-package-data = true
-packages = ["material_forge_env", "material_forge_env.server", "material_forge_env.environment", "material_forge_env.scenarios"]
-package-dir = { "material_forge_env" = ".", "material_forge_env.server" = "server", "material_forge_env.environment" = "environment", "material_forge_env.scenarios" = "scenarios" }
+packages = ["server", "environment", "scenarios"]
 
 [tool.setuptools.package-data]
-"material_forge_env.server" = ["static/*", "static/**/*"]
+"server" = ["static/*", "static/**/*"]
 
 [dependency-groups]
 dev = [

@@ -1,214 +1,96 @@
-# MaterialForge
+---
+title: MaterialForge
+emoji: 🔬
+colorFrom: indigo
+colorTo: violet
+sdk: docker
+app_port: 8000
+tags:
+  - openenv
+  - reinforcement-learning
+  - materials-science
+  - crystal-structure
+---
 
-**An OpenEnv environment for AI-driven atomic crystal structure design.**
+# 🔬 MaterialForge
+### AI-Driven Atomic Crystal Structure Engineering
 
-MaterialForge is a reinforcement learning environment where an AI agent designs atomic crystal structures on an 8x8 lattice grid to match target material properties (hardness, conductivity, thermal resistance, elasticity). Built with the [OpenEnv](https://github.com/meta-pytorch/openenv) framework for the Meta PyTorch OpenEnv Hackathon.
+[![OpenEnv](https://img.shields.io/badge/Framework-OpenEnv-blueviolet?style=for-the-badge)](https://github.com/meta-pytorch/openenv)
+[![License: BSD](https://img.shields.io/badge/License-BSD-green?style=for-the-badge)](LICENSE)
+[![Hackathon: Meta OpenEnv](https://img.shields.io/badge/Hackathon-Meta%20OpenEnv-red?style=for-the-badge)](https://openenv.ai)
 
-**Live Demo:** [huggingface.co/spaces/ArshPathan/material_forge_env](https://huggingface.co/spaces/ArshPathan/material_forge_env)
+---
 
-## The Problem
+**MaterialForge** is a high-fidelity Reinforcement Learning environment designed for the discovery and optimization of atomic crystal structures. It challenges AI agents to arrange atoms on a lattice grid to achieve precise material properties like **Hardness**, **Conductivity**, and **Thermal Resistance**.
 
-In materials science, the physical properties of a material depend heavily on atomic arrangement — carbon as diamond is extremely hard, while carbon as graphite is soft and conductive. Discovering new materials requires exploring a massive design space of possible atomic configurations.
+## 🚀 Key Features
 
-MaterialForge frames this as an optimization task: given a target material specification, an AI agent iteratively constructs an atomic structure that satisfies the requirements.
+*   **Atomic Physics Simulation:** Heuristic-based estimation of material properties considering bonding density, symmetry, and structural stability.
+*   **Dynamic Lattice Engine:** 8x8 design space supporting complex Phase Classifications (Crystalline vs. Amorphous).
+*   **Custom Dashboard:** High-fidelity interactive UI for real-time visualization of agent progress and crystalline growth.
+*   **Production Ready:** Fully compatible with Meta's OpenEnv validator and Hugging Face Spaces.
 
-## How It Works
+## 🏗️ The Challenge
 
-```
-Episode start → Agent receives target properties + empty 8x8 grid
-     ↓
-Agent places/replaces/removes atoms (A=Metal, B=Conductor, C=Ceramic, P=Polymer)
-     ↓
-Physics engine estimates properties from structure (bonding, density, symmetry)
-     ↓
-Reward signal based on property match, stability, quality, phase, cost
-     ↓
-Repeat until target met or step limit reached
-```
+In materials science, structure defines function. MaterialForge frames this as an iterative optimization task:
 
-### Atom Types
+1.  **Objective:** Match a target specification (e.g., "Diamond-like" property vector).
+2.  **Constraints:** Operate within a finite **Cost Budget** and time-sensitive **Step Limit**.
+3.  **Reward:** A complex multi-objective signal balancing structural quality, property accuracy, and material efficiency.
 
-| Symbol | Name | Cost | Primary Strength |
-|--------|------|------|------------------|
-| **A** | Metal | 8 | Hardness |
-| **B** | Conductor | 6 | Conductivity |
-| **C** | Ceramic | 4 | Thermal Resistance |
-| **P** | Polymer | 2 | Elasticity |
+### Atom Palette
 
-### Reward Formula
+| Symbol | Element Type | Role | Cost |
+| :--- | :--- | :--- | :--- |
+| **A** | **Metal** | High Hardness Provider | 8 |
+| **B** | **Conductor** | Signal Efficiency | 6 |
+| **C** | **Ceramic** | Thermal Shielding | 4 |
+| **P** | **Polymer** | Elasticity & Flexibility | 2 |
 
-```
-reward = 0.50 * property_match + 0.25 * stability + 0.15 * lattice_quality + 0.10 * phase_bonus - cost_penalty
-```
-
-## Quick Start
+## 🛠️ Installation & Setup
 
 ### Prerequisites
+*   Python 3.10+
+*   [uv](https://docs.astral.sh/uv/) (Recommended) or `pip`
 
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) package manager
-
-### Install & Run
-
+### Quick Start
 ```bash
-cd material_forge_env
+# Clone and enter directory
+git clone https://github.com/Arsh-Pathan/MaterialForge && cd MaterialForge
+
+# Install dependencies and start the environment server
 uv sync
-uv run server              # starts on http://localhost:8000
-uv run server --port 8000  # or specify a port
+uv run server
 ```
 
-### Connect with Python
+## 🧪 Model Inference
 
-```python
-from material_forge_env import MaterialForgeAction, MaterialForgeEnv
-
-with MaterialForgeEnv(base_url="http://localhost:8000") as env:
-    result = env.reset()
-    print(f"Target: {result.observation.target}")
-
-    # Build a structure
-    actions = [
-        MaterialForgeAction(action_type="place", row=0, col=0, atom="A"),
-        MaterialForgeAction(action_type="place", row=0, col=1, atom="A"),
-        MaterialForgeAction(action_type="place", row=1, col=0, atom="B"),
-        MaterialForgeAction(action_type="place", row=1, col=1, atom="C"),
-    ]
-
-    for action in actions:
-        result = env.step(action)
-        print(f"Step {result.observation.step_number}: "
-              f"reward={result.reward:.4f}, phase={result.observation.phase}")
-```
-
-### REST API
+To evaluate an agent against the benchmark locally:
 
 ```bash
-# Reset with a named scenario
-curl -X POST http://localhost:8000/reset \
-  -H "Content-Type: application/json" \
-  -d '{"difficulty": "easy", "scenario_name": "diamond-like"}'
+export API_BASE_URL="http://your-lite-llm-proxy"
+export API_KEY="your-key"
+export MODEL_NAME="your-model"
 
-# Place an atom
-curl -X POST http://localhost:8000/step \
-  -H "Content-Type: application/json" \
-  -d '{"action_type": "place", "row": 3, "col": 3, "atom": "A"}'
+uv run python inference.py
 ```
 
-Interactive API docs at [localhost:8000/docs](http://localhost:8000/docs).
+## 📊 Environment Architecture
 
-## Deployment
+MaterialForge is built on the **OpenEnv Core** for robust distributed evaluation.
 
-### Docker
-
-```bash
-docker build -t material-forge-env:latest material_forge_env/server/
-docker run -p 8000:8000 material-forge-env:latest
+```mermaid
+graph TD
+    Agent[LLM Agent] -->|MaterialForgeAction| API[FastAPI Server]
+    API -->|Lattice Update| Engine[Lattice Engine]
+    Engine -->|Structural Data| Physics[Heuristic Physics Engine]
+    Physics -->|Property Distribution| Reward[Reward Rubric]
+    Reward -->|MaterialForgeObservation| Agent
 ```
 
-### Hugging Face Spaces
+---
 
-```bash
-cd material_forge_env
-uv run openenv validate   # check everything is correct
-uv run openenv push       # deploy to HF Spaces
-```
-
-## Project Structure
-
-```
-MaterialForge/
-├── README.md
-├── CLAUDE.md                 # Claude Code project guidance
-├── IDEA.md                   # Original concept document
-├── PLAN.md                   # Implementation plan
-└── material_forge_env/       # OpenEnv environment package
-    ├── config.py             # Constants: grid size, atom types, difficulty presets
-    ├── models.py             # MaterialForgeAction & MaterialForgeObservation (Pydantic)
-    ├── lattice.py            # 8x8 grid engine: place, replace, remove, neighbors
-    ├── physics.py            # Property estimation, phase classification, stability
-    ├── rubrics.py            # HeuristicRewardRubric — reward computation
-    ├── scenarios.py          # Target profile generators (5 named + random)
-    ├── client.py             # MaterialForgeEnv WebSocket client
-    ├── openenv.yaml          # OpenEnv manifest
-    ├── pyproject.toml        # Package metadata & dependencies
-    ├── inference.py              # Inference script for hackathon submission
-    ├── Dockerfile                # Container image
-    └── server/
-        ├── app.py                            # FastAPI application (HTTP + WS)
-        └── material_forge_env_environment.py # MaterialForgeEnvironment(Environment)
-```
-
-## Environment Details
-
-### Action Space
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `action_type` | `"place"` \| `"replace"` \| `"remove"` | Lattice operation |
-| `row` | `0-7` | Grid row |
-| `col` | `0-7` | Grid column |
-| `atom` | `"A"` \| `"B"` \| `"C"` \| `"P"` | Atom type (required for place/replace) |
-
-### Observation Space
-
-| Field | Description |
-|-------|-------------|
-| `grid` | 8x8 list of strings (`"."` = empty, `"A"`/`"B"`/`"C"`/`"P"` = atoms) |
-| `target` | Dict of target property values |
-| `current_properties` | Dict of estimated properties (0-100 scale) |
-| `phase` | `"crystalline"` \| `"polycrystalline"` \| `"amorphous"` |
-| `total_cost` / `cost_budget` | Atom cost tracking |
-| `step_number` / `max_steps` | Episode progress |
-| `score_breakdown` | Stability, lattice quality, action validity |
-| `reward` | Scalar reward (0.0 - 1.0) |
-| `done` | Episode termination flag |
-
-### Difficulty Presets
-
-| Level | Tolerance | Budget | Steps |
-|-------|-----------|--------|-------|
-| Easy | 20 | 120 | 64 |
-| Medium | 10 | 80 | 50 |
-| Hard | 5 | 60 | 40 |
-
-### Named Scenarios
-
-| Name | Hardness | Conductivity | Thermal Res. | Elasticity |
-|------|----------|--------------|--------------|------------|
-| diamond-like | 90 | 30 | 60 | 10 |
-| conductor | 25 | 90 | 20 | 30 |
-| heat-shield | 50 | 10 | 90 | 15 |
-| flexible-polymer | 15 | 20 | 25 | 85 |
-| balanced-alloy | 55 | 50 | 50 | 45 |
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/reset` | POST | Reset environment |
-| `/step` | POST | Execute an action |
-| `/state` | GET | Current state |
-| `/schema` | GET | Action/observation schemas |
-| `/health` | GET | Health check |
-| `/ws` | WS | WebSocket (persistent sessions) |
-| `/docs` | GET | Swagger UI |
-
-## Architecture
-
-MaterialForge follows the OpenEnv 3-component pattern: **Models -> Environment -> Server**.
-
-```
-Client.step(MaterialForgeAction)
-  -> WebSocket -> FastAPI (app.py)
-  -> MaterialForgeEnvironment.step(action)
-    -> lattice.py: apply action (place/replace/remove atom)
-    -> physics.py: estimate_properties(lattice)
-    -> physics.py: classify_phase(lattice)
-    -> rubrics.py: _apply_rubric(action, obs) -> reward
-  -> MaterialForgeObservation
-  -> WebSocket -> StepResult
-```
-
-## License
-
-BSD-style license. See file headers for details.
+<div align="center">
+  <p>Built with ❤️ by <b>Arsh Pathan</b> for the Meta PyTorch OpenEnv Hackathon</p>
+  <a href="https://huggingface.co/spaces/ArshPathan/material_forge_env">View Live Demo on Hugging Face</a>
+</div>

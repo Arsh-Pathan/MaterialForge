@@ -64,18 +64,18 @@ cleanup() { rm -f "${CLEANUP_FILES[@]+"${CLEANUP_FILES[@]}"}"; }
 trap cleanup EXIT
 
 PING_URL="${1:-}"
-REPO_DIR="${2:-./material_forge_env}"
+REPO_DIR="${2:-.}"
 
 if [ -z "$PING_URL" ]; then
   printf "Usage: %s <ping_url> [repo_dir]\n" "$0"
   printf "\n"
   printf "  ping_url   Your HuggingFace Space URL (e.g. https://ArshPathan-material-forge-env.hf.space)\n"
-  printf "  repo_dir   Path to your environment directory (default: ./material_forge_env)\n"
+  printf "  repo_dir   Path to your environment directory (default: .)\n"
   exit 1
 fi
 
 if ! REPO_DIR="$(cd "$REPO_DIR" 2>/dev/null && pwd)"; then
-  printf "Error: directory '%s' not found\n" "${2:-./material_forge_env}"
+  printf "Error: directory '%s' not found\n" "${2:-.}"
   exit 1
 fi
 PING_URL="${PING_URL%/}"

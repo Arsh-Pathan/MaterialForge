@@ -10,36 +10,21 @@ from uuid import uuid4
 from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
 
-try:
-    from ..environment.config import (
-        MIN_ATOMS_FOR_COMPLETION,
-        PROPERTY_NAMES,
-        VALID_COMPLETION_PHASES,
-    )
-    from ..environment.lattice import Lattice
-    from ..models import MaterialForgeAction, MaterialForgeObservation
-    from ..environment.physics import (
-        classify_phase,
-        compute_lattice_quality,
-        compute_stability,
-        estimate_properties,
-    )
-    from ..scenarios.scenarios import generate_scenario
-except ImportError:
-    from environment.config import (
-        MIN_ATOMS_FOR_COMPLETION,
-        PROPERTY_NAMES,
-        VALID_COMPLETION_PHASES,
-    )
-    from environment.lattice import Lattice
-    from models import MaterialForgeAction, MaterialForgeObservation
-    from environment.physics import (
-        classify_phase,
-        compute_lattice_quality,
-        compute_stability,
-        estimate_properties,
-    )
-    from scenarios.scenarios import generate_scenario
+# Direct imports from root-level modules/packages
+from environment.config import (
+    MIN_ATOMS_FOR_COMPLETION,
+    PROPERTY_NAMES,
+    VALID_COMPLETION_PHASES,
+)
+from environment.lattice import Lattice
+from models import MaterialForgeAction, MaterialForgeObservation
+from environment.physics import (
+    classify_phase,
+    compute_lattice_quality,
+    compute_stability,
+    estimate_properties,
+)
+from scenarios.scenarios import generate_scenario
 
 
 class MaterialForgeEnvironment(Environment):

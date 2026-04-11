@@ -25,11 +25,11 @@ ARG BUILD_MODE=in-repo
 ARG ENV_NAME=material_forge_env
 
 # Copy environment code (always at root of build context)
-COPY . /app/env
+COPY . /app
 
 # For in-repo builds, openenv is already vendored in the build context
 # For standalone builds, openenv will be installed via pyproject.toml
-WORKDIR /app/env
+WORKDIR /app
 
 # Ensure uv is available (for local builds where base image lacks it)
 RUN if ! command -v uv >/dev/null 2>&1; then \
@@ -60,20 +60,19 @@ FROM ${BASE_IMAGE}
 WORKDIR /app
 
 # Copy the virtual environment from builder
-COPY --from=builder /app/env/.venv /app/.venv
+COPY --from=builder /app/.venv /app/.venv
 
 # Copy the environment code
-COPY --from=builder /app/env /app/env
+COPY --from=builder /app /app
 
 # Set PATH to use the virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Set PYTHONPATH so imports work correctly
-ENV PYTHONPATH="/app/env:$PYTHONPATH"
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 # Ensure README is visible to the OpenEnv playground
 # It looks for /app/README.md or ENV_README_PATH
-RUN cp /app/env/README.md /app/README.md
 ENV ENV_README_PATH=/app/README.md
 
 # OpenEnv's LocalDockerProvider hardcodes host:8000 -> container:8000
@@ -89,4 +88,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Run the FastAPI server
 # OpenEnv's LocalDockerProvider hardcodes -p <host>:8000, so we MUST listen on 8000.
 # Hugging Face Spaces will work correctly on port 8000 if app_port: 8000 is set in README.md
-CMD ["sh", "-c", "cd /app/env && uvicorn material_forge_env.server.app:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "uvicorn server.app:app --host 0.0.0.0 --port ${PORT}"]

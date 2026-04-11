@@ -8,3 +8,4 @@ dist/
 build/
 outputs/
 .env
+.pytest_cache/
