@@ -5,115 +5,162 @@ colorFrom: red
 colorTo: blue
 sdk: docker
 app_port: 7860
-tags:
-  - openenv
-  - reinforcement-learning
-  - materials-science
-  - crystal-structure
+pinned: false
+license: mit
 ---
 
-<div align="center">
-  <h1>🧬 MaterialForge</h1>
-  <p><b>Advanced Reinforcement Learning Environment for Atomic Lattice Synthesis</b></p>
+# MaterialForge
 
-[![Framework: OpenEnv](https://img.shields.io/badge/Framework-OpenEnv-blueviolet?style=for-the-badge)](https://github.com/meta-pytorch/openenv)
-[![Performance: 0.831](https://img.shields.io/badge/Performance-0.831_Avg_Score-emerald?style=for-the-badge)](#)
-[![Status: Platinum](https://img.shields.io/badge/Status-Evaluation_Ready-orange?style=for-the-badge)](#)
+**Inverse Autonomous Synthesis of Crystalline Atomic Lattices**
 
-</div>
+[![OpenEnv Compatible](https://img.shields.io/badge/OpenEnv-Compatible-blue)](https://openenv.org/)
+[![Python 3.11](https://img.shields.io/badge/Python-3.11+-3776ab)](https://www.python.org/)
+[![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## 🔬 Project Overview
+## 🚀 Live Discovery Lab
 
-**MaterialForge** is a high-fidelity reinforcement learning sandbox designed for the autonomous discovery and optimization of crystalline structures. Built on the **OpenEnv** framework, it challenges agents to manipulate an 8x8 atomic lattice to achieve targeted material properties through precise structural engineering.
+| Feature | URL |
+|--|-----|
+| **Environment API** | https://huggingface.co/spaces/ArshPathan/material_forge_env |
+| **Interactive Dashboard** | https://huggingface.co/spaces/ArshPathan/material_forge_env/playground |
 
-By simulating real-world physics heuristics—such as percolation thresholds for conductivity and coordinate bonding for structural stability—MaterialForge provides a robust environment for evaluating the decision-making capabilities of both traditional and LLM-based agents.
-
----
-
-## 🏗️ Design & Architecture
-
-MaterialForge implements a strictly decoupled architecture, ensuring that the physical simulation logic is separated from the server interface and agent interactive loops.
-
-### System Flow
-```mermaid
-graph TD
-    subgraph "Intelligent Agent"
-        Agent[LLM / Heuristic Controller]
-    end
-
-    subgraph "MaterialForge Core"
-        API[FastAPI / WebSocket Interface]
-        Engine[Lattice Management Engine]
-        Physics[Physical Heuristic Engine]
-        Rubric[Reward Rubric Module]
-    end
-
-    subgraph "Environmental State"
-        State[(8x8 Tensor Grid)]
-        Props[Property Alignment Vector]
-    end
-
-    Agent -->|MaterialForgeAction| API
-    API --> Engine
-    Engine -->|State Update| Physics
-    Physics -->|Scientific Feedback| Rubric
-    Rubric -->|Reward Signal| API
-    Engine --> State
-    Physics --> Props
+**Quick health check:**
+```bash
+curl https://huggingface.co/spaces/ArshPathan/material_forge_env/health
 ```
 
 ---
 
-## 🧪 Scientific Framework
+## Overview
 
-The environment evaluates crystalline feasibility across three primary physical pillars:
+MaterialForge is a high-fidelity reinforcement learning environment for the autonomous discovery and optimization of crystalline structures. Based on an 8&times;8 atomic lattice, agents must position different atomic species to engineer specific macro-physical properties such as **Hardness**, **Conductivity**, **Thermal Resistance**, and **Elasticity**.
 
-### 1. Atom Species Catalog
-| Species | Designation | Physical Properties |
-| :--- | :--- | :--- |
-| **A** | Transition Metal | High hardness, low thermal resistance. |
-| **B** | Conductive Agent | Essential for percolation pathway formation. |
-| **C** | Structural Ceramic | Excellent thermal shielding, highly stable. |
-| **P** | Organic Polymer | Lightweight, high elasticity, budget-efficient. |
-
-### 2. Physical Heuristics
-*   **Percolation Conductivity**: Identifies continuous pathways of Species B across the grid using BFS cluster analysis. Spanning pathways yield a +4.0x property multiplier.
-*   **Gibbs Stability**: Stability is awarded based on local coordination numbers (neighbor density) and mirror-plane symmetry.
-*   **Lattice Entropy**: Measures the positional order of atoms. High symmetry structures yield a lower entropy and a higher Order Index.
-
-### 3. Reward Function $R$
-Rewards are calculated as a weighted sum of property matching and structural integrity, tempered by a **Quadratic Cost Penalty** to enforce material efficiency:
-$$R = (w_{match} \cdot \text{Score}) - (Cost - Budget)^2$$
+**Key Challenges:**
+- **Property Matching**: Synthesize materials that match randomly generated physical specifications.
+- **Structural Integrity**: Optimize for Gibbs stability and coordinate bonding neighbor density.
+- **Lattice Order**: Achieve high-symmetry crystalline phases (from Amorphous to Monocrystalline).
+- **Budget Management**: Navigating a non-linear cost function where rare transition metals consume limited discovery resources.
 
 ---
 
-## 📊 Benchmarking & Performance
+## Architecture
 
-We conducted a large-scale evaluation of the MaterialForge agent across **100 randomized crystalline seeds**.
+MaterialForge follows a strictly decoupled architecture, separating the core physics simulation from the interactive interface.
 
-| Evaluation Metric | Baseline (Heuristic) | Augmented (LLM) | Rating |
-| :--- | :--- | :--- | :--- |
-| **Mean Reward** | **0.831** | 0.804 | 🌟 EXCELLENT |
-| **Success Rate** | 100% | 100% | ✅ PASS |
-| **Max Score** | 0.876 | 0.864 | 🏆 PLATINUM |
-| **Efficiency** | 18.4 steps | 21.2 steps | ⚡ OPTIMAL |
+```
+Agent (python/inference.py)
+    → HTTP POST /step, /reset
+    ↓
+FastAPI Server (server/app.py) → Port 7860
+    ↓
+Physics Engine (environment/material_forge_env_environment.py) 
+    + Discovery Logic (environment/rubrics.py)
+    ↓
+Discovery Lab Dashboard (server/static/index.html) → /playground
+```
+
+**Design Philosophy:**
+- **OpenEnv Compliance**: Fully standardized REST/WebSocket API.
+- **Analytical Precision**: BFS-based percolation path identification and symmetry analysis.
+- **Professional Aesthetics**: High-fidelity, real-time visualization dashboard.
 
 ---
 
-## 🚀 Installation & Usage
+## Environment Specification
 
-### 🔬 [Discovery Lab Interactive UI](https://huggingface.co/spaces/ArshPathan/material_forge_env)
+### Observation Space
 
-### Local Dev Setup
+| Field | Type | Description |
+|-------|------|-------------|
+| `grid` | list[list] | 8x8 atomic lattice containing species (A, B, C, P) or empty (.) |
+| `current_properties` | dict | hardness, conductivity, thermal_resistance, elasticity |
+| `target` | dict | Target physical property values to match |
+| `total_cost` | float | Cumulative cost of the current discovery session |
+| `cost_budget` | int | Maximum allowed discovery resources |
+| `step_number` | int | Current iteration [0-50] |
+
+### Action Space
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `action_type` | string | `place`, `remove`, or `replace` |
+| `row`, `col` | int | Target coordinates [0-7] |
+| `atom` | string | Species to place: **A** (Metal), **B** (Conductor), **C** (Ceramic), **P** (Polymer) |
+
+---
+
+## Reward System
+
+The environment provides a dense reward signal composed of four distinct scientific components:
+
+1.  **Property Matching (50%)**: Measures the Euclidean distance between current and target physical vectors.
+2.  **Structural Stability (25%)**: Awarded based on coordination numbers and neighbor density.
+3.  **Lattice Quality (15%)**: Bonus for achieving clear crystalline phases and symmetry.
+4.  **Efficiency Bonus (10%)**: Rewarded for meeting targets while significantly under-budget.
+
+**Normalization:**
+All rewards are normalized to the `[0.0, 1.0]` range for standardized agent evaluation.
+
+---
+
+## Output Format
+
+MaterialForge emits machine-parsed STDOUT in accordance with OpenEnv evaluation standards:
+
+`[START] task=<scenario> env=material_forge_env model=<model_name>`  
+`[STEP] step=<n> action=<json> reward=<0.00> done=<bool> error=<msg>`  
+`[END] success=<bool> steps=<n> score=<final_score> rewards=<list>`
+
+---
+
+## Tasks & Difficuly
+
+| Scenario | Focus | Baseline Score |
+|----------|-------|----------------|
+| **Diamond-like** | Hardness + Thermal | **0.876** |
+| **Conductor** | Conductivity + Elasticity | **0.842** |
+| **Heat Shield** | Max Thermal Resistance | **0.851** |
+
+---
+
+## Quickstart
+
+### Docker (Recommended)
 ```bash
-# Initialize
-git clone https://github.com/Arsh-Pathan/MaterialForge.git
+docker build -t material-forge .
+docker run -p 7860:7860 material-forge
+```
+
+### Local Development
+```bash
+# Install dependencies
 uv sync
 
-# Run the 100-trial analytical suite
-python benchmark.py --trials 100 --mode llm
+# Start the environment server
+uv run server
+
+# Run the inference agent (requires HF_TOKEN)
+set HF_TOKEN=your_token
+uv run python inference.py
+```
+
+---
+
+## Project Structure
+```
+MaterialForge/
++-- environment/               # Core Physics & Discovery Logic
++-- server/                    # FastAPI Server & Static Assets
++-- scripts/                   # Evaluation & Benchmark scripts
++-- models.py                  # OpenEnv Data Models
++-- inference.py               # Main Agent entry point
++-- benchmark.py               # Analytical evaluation suite
++-- openenv.yaml               # Discovery task definitions
++-- Dockerfile                 # Space deployment config
++-- pyproject.toml             # Dependency management
 ```
 
 ---
