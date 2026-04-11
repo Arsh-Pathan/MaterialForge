@@ -77,12 +77,17 @@ if _STATIC_DIR.is_dir():
         """Default landing page."""
         return FileResponse(str(_STATIC_DIR / "index.html"))
 
-    # Explicitly move our custom routes to the front of the routing table
+    @app.get("/health")
+    async def health():
+        return {"status": "healthy"}
+
+
+    # Custom discovery routes for UI...the front of the routing table
     # This ensures they take precedence over any default OpenEnv/Gradio routes
     custom_routes = []
     for i in range(len(app.routes) - 1, -1, -1):
         r = app.routes[i]
-        if hasattr(r, "path") and r.path in ("/", "/web", "/playground", "/api"):
+        if hasattr(r, "path") and r.path in ("/", "/web", "/playground", "/api", "/health"):
             custom_routes.append(app.routes.pop(i))
         elif hasattr(r, "path") and r.path.startswith("/static"):
             custom_routes.append(app.routes.pop(i))
