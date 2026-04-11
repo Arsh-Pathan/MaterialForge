@@ -65,15 +65,22 @@ if _STATIC_DIR.is_dir():
     def api_docs_redirect():
         return RedirectResponse(url="/docs")
 
-    # Ensure the root endpoint serves the laboratory dashboard immediately
-    for i in range(len(app.routes) - 1, -1, -1):
-        if hasattr(app.routes[i], "path") and app.routes[i].path == "/":
-            app.routes.pop(i)
-
     @app.get("/", include_in_schema=False)
     def serve_dashboard():
         """Default landing page."""
         return FileResponse(str(_STATIC_DIR / "index.html"))
+
+    # Explicitly move our custom routes to the front of the routing table
+    # This ensures they take precedence over any default OpenEnv/Gradio routes
+    # that might be auto-mounted at the root.
+    custom_routes = []
+    for i in range(len(app.routes) - 1, -1, -1):
+        r = app.routes[i]
+        if hasattr(r, "path") and (r.path == "/" or r.path.startswith("/playground")):
+            custom_routes.append(app.routes.pop(i))
+    
+    for r in reversed(custom_routes):
+        app.routes.insert(0, r)
 
 
 def main():
