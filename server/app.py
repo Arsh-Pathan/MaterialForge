@@ -15,7 +15,7 @@ from pathlib import Path
 
 # OpenEnv runtime integration
 try:
-    from openenv.core.env_server.http_server import create_app
+    from openenv.core.env_server.http_server import create_fastapi_app
 except ImportError as e:
     raise ImportError("OpenEnv-Core is required. Please install via 'uv sync'.") from e
 
@@ -30,12 +30,11 @@ def _env_factory():
     return MaterialForgeEnvironment(rubric=HeuristicRewardRubric())
 
 
-# Initialize the OpenEnv standard FastAPI app
-app = create_app(
+# Initialize a clean OpenEnv FastAPI app (disabling default Gradio interface)
+app = create_fastapi_app(
     _env_factory,
     MaterialForgeAction,
     MaterialForgeObservation,
-    env_name="material_forge_env",
     max_concurrent_envs=4,
 )
 
