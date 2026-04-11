@@ -59,10 +59,14 @@ if _STATIC_DIR.is_dir():
     # Mount the dashboard at /playground
     app.mount("/playground", StaticFiles(directory=str(_STATIC_DIR), html=True), name="playground")
 
-    # Developer convenience: /api redirects to the Swagger UI
+    # Handle legacy system links
     @app.get("/api", include_in_schema=False)
     def api_docs_redirect():
         return RedirectResponse(url="/docs")
+
+    @app.get("/web", include_in_schema=False)
+    def web_legacy_redirect():
+        return RedirectResponse(url="/playground")
 
     @app.get("/", include_in_schema=False)
     def serve_dashboard():
