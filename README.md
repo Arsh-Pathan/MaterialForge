@@ -25,9 +25,10 @@ tags:
 
 ## 🚀 Key Features
 
-*   **Atomic Physics Simulation:** Heuristic-based estimation of material properties considering bonding density, symmetry, and structural stability.
+*   **Advanced Physics Simulation:** Professional-grade heuristics using **Percolation Thresholds** for conductivity, **Positional Entropy** for lattice order, and **Mirror Symmetry** for structural stability.
+*   **Scientific Telemetry:** Real-time dashboard providing deep structural analytics, including **Gibbs-Stability** estimation and **Quadrant Homogeneity** scoring.
 *   **Dynamic Lattice Engine:** 8x8 design space supporting complex Phase Classifications (Crystalline vs. Amorphous).
-*   **Custom Dashboard:** High-fidelity interactive UI for real-time visualization of agent progress and crystalline growth.
+*   **Custom Laboratory Dashboard:** High-fidelity interactive UI for real-time visualization of crystalline growth and agent performance.
 *   **Production Ready:** Fully compatible with Meta's OpenEnv validator and Hugging Face Spaces.
 
 ## 🏗️ The Challenge
@@ -83,8 +84,8 @@ MaterialForge is built on the **OpenEnv Core** for robust distributed evaluation
 graph TD
     Agent[LLM Agent] -->|MaterialForgeAction| API[FastAPI Server]
     API -->|Lattice Update| Engine[Lattice Engine]
-    Engine -->|Structural Data| Physics[Heuristic Physics Engine]
-    Physics -->|Property Distribution| Reward[Reward Rubric]
+    Engine -->|Structural Data| Physics[Advanced Heuristic Physics]
+    Physics -->|Percolation/Entropy| Reward[Reward Rubric]
     Reward -->|MaterialForgeObservation| Agent
 ```
 
