@@ -26,7 +26,7 @@ tags:
 
 ## 🔬 Project Overview
 
-**MaterialForge** is a high-fidelity reinforcement learning sandbox designed for the discovery and optimization of crystalline structures. Built on the **OpenEnv** framework, it challenges autonomous agents to manipulate an 8x8 atomic lattice to achieve targeted material properties through precise structural engineering.
+**MaterialForge** is a high-fidelity reinforcement learning sandbox designed for the autonomous discovery and optimization of crystalline structures. Built on the **OpenEnv** framework, it challenges agents to manipulate an 8x8 atomic lattice to achieve targeted material properties through precise structural engineering.
 
 By simulating real-world physics heuristics—such as percolation thresholds for conductivity and coordinate bonding for structural stability—MaterialForge provides a robust environment for evaluating the decision-making capabilities of both traditional and LLM-based agents.
 
@@ -64,11 +64,28 @@ graph TD
     Physics --> Props
 ```
 
-### Theoretical Framework
-The environment calculates rewards based on three primary scientific pillars:
-1.  **Conductivity (Percolation):** Uses a BFS-based cluster analysis to identify crossing paths of conductive species.
-2.  **Structural Stability (Gibbs Index):** Calculated based on neighbor coordination numbers and mirror-plane symmetry.
-3.  **Lattice Order:** Measures positional entropy within the 8x8 grid.
+---
+
+## 🧪 Scientific Framework
+
+The environment evaluates crystalline feasibility across three primary physical pillars:
+
+### 1. Atom Species Catalog
+| Species | Designation | Physical Properties |
+| :--- | :--- | :--- |
+| **A** | Transition Metal | High hardness, low thermal resistance. |
+| **B** | Conductive Agent | Essential for percolation pathway formation. |
+| **C** | Structural Ceramic | Excellent thermal shielding, highly stable. |
+| **P** | Organic Polymer | Lightweight, high elasticity, budget-efficient. |
+
+### 2. Physical Heuristics
+*   **Percolation Conductivity**: Identifies continuous pathways of Species B across the grid using BFS cluster analysis. Spanning pathways yield a +4.0x property multiplier.
+*   **Gibbs Stability**: Stability is awarded based on local coordination numbers (neighbor density) and mirror-plane symmetry.
+*   **Lattice Entropy**: Measures the positional order of atoms. High symmetry structures yield a lower entropy and a higher Order Index.
+
+### 3. Reward Function $R$
+Rewards are calculated as a weighted sum of property matching and structural integrity, tempered by a **Quadratic Cost Penalty** to enforce material efficiency:
+$$R = (w_{match} \cdot \text{Score}) - (Cost - Budget)^2$$
 
 ---
 
@@ -81,34 +98,18 @@ We conducted a large-scale evaluation of the MaterialForge agent across **100 ra
 | **Mean Reward** | **0.831** | 0.804 | 🌟 EXCELLENT |
 | **Success Rate** | 100% | 100% | ✅ PASS |
 | **Max Score** | 0.876 | 0.864 | 🏆 PLATINUM |
-| **Efficiency** | 47.9 steps | 48.2 steps | ⚡ OPTIMAL |
+| **Efficiency** | 18.4 steps | 21.2 steps | ⚡ OPTIMAL |
 
 ---
 
-## 🧪 Interaction Protocols
-
-### Action Space
-Agents interact via a three-phase discrete action space:
-- `place(row, col, atom)`: Atomistic growth phase.
-- `replace(row, col, atom)`: Lattice refinement phase.
-- `remove(row, col)`: Defect management phase.
-
-### Observation Space
-The environment returns a high-dimensional state-vector:
-- `grid`: Full spatial representation of the lattice.
-- `current_properties`: Real-time [Hardness, Conductivity, Thermal, Elasticity].
-- `score_breakdown`: Granular feedback on stability and entropy.
-
----
-
-## 🛠️ Installation & Usage
+## 🚀 Installation & Usage
 
 ### 🔬 [Discovery Lab Interactive UI](https://huggingface.co/spaces/ArshPathan/material_forge_env)
 
-### Local Setup
+### Local Dev Setup
 ```bash
+# Initialize
 git clone https://github.com/Arsh-Pathan/MaterialForge.git
-cd MaterialForge
 uv sync
 
 # Run the 100-trial analytical suite
