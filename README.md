@@ -1,8 +1,8 @@
 ---
 title: MaterialForge
 emoji: 🔬
-colorFrom: indigo
-colorTo: violet
+colorFrom: red
+colorTo: blue
 sdk: docker
 app_port: 8000
 tags:
@@ -72,6 +72,7 @@ graph TD
 The environment implements three primary physical models to simulate material behavior at a heuristic level.
 
 ### 1. Percolation & Conductivity
+
 Conductivity is determined by the **Percolation Threshold**. The engine identifies connected pathways of Conductive Atoms (Species B) across the lattice.
 
 ```mermaid
@@ -87,11 +88,14 @@ flowchart LR
 ```
 
 ### 2. Structural Stability (Gibbs Approach)
+
 Stability is derived from local coordination numbers and mirror-plane symmetry.
-*   **Coordination bonding**: Rewards atoms with a higher local neighbor density.
-*   **Mirror Symmetry**: Symmetry across central axes stabilizes the lattice against thermal stress.
+
+- **Coordination bonding**: Rewards atoms with a higher local neighbor density.
+- **Mirror Symmetry**: Symmetry across central axes stabilizes the lattice against thermal stress.
 
 ### 3. Lattice Order (Entropy)
+
 Measures the **Positional Entropy** of atoms. Highly ordered crystalline structures (Symmetric and Homogeneous) yield the highest "Lattice Order Index".
 
 ---
@@ -99,16 +103,19 @@ Measures the **Positional Entropy** of atoms. Highly ordered crystalline structu
 ## 📊 Interaction Model
 
 ### Action Space
+
 Agents interact via discrete operations on the 8x8 lattice:
 
-| Action | Description | Scientific Intent |
-| :--- | :--- | :--- |
-| `place` | Inserts an atom into an empty cell. | Material Growth |
-| `replace` | Swaps an existing atom for a different species. | Lattice Refinement |
-| `remove` | Clears a cell. | Defect Management / Budget Recovery |
+| Action    | Description                                     | Scientific Intent                   |
+| :-------- | :---------------------------------------------- | :---------------------------------- |
+| `place`   | Inserts an atom into an empty cell.             | Material Growth                     |
+| `replace` | Swaps an existing atom for a different species. | Lattice Refinement                  |
+| `remove`  | Clears a cell.                                  | Defect Management / Budget Recovery |
 
 ### Observation Space
+
 The environment returns a rich state-vector containing:
+
 - **Grid Snapshot**: Full 2D array representation.
 - **Property Vector**: Current [Hardness, Conductivity, Thermal, Elasticity].
 - **Score Breakdown**: Granular feedback on Stability and Order.
@@ -135,6 +142,7 @@ pie title Reward Distribution
 ## 🛠️ Developer Integration
 
 ### Quick Launch
+
 ```bash
 # Install dependencies
 uv sync
@@ -144,6 +152,7 @@ uv run server
 ```
 
 ### Interactive Playground
+
 Access the high-fidelity laboratory dashboard at:
 `http://localhost:8000/playground`
 
