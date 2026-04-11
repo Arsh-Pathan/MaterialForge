@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MaterialForge - Discovery Lab</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --bg: #0f172a;
@@ -38,13 +39,16 @@
     .nav-tabs { display: flex; gap: 4px; background: rgba(255,255,255,0.03); padding: 4px; border-radius: 8px; }
     .nav-tab {
       background: none; border: none; color: var(--text-2); padding: 6px 16px;
-      font-size: 11px; font-weight: 600; cursor: pointer; border-radius: 6px; transition: 0.2s;
+      border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+      transition: all 0.2s;
     }
     .nav-tab.active { background: var(--accent); color: white; }
-    .nav-tab:hover:not(.active) { background: rgba(255,255,255,0.05); }
-
-    .app { display: flex; flex: 1; overflow: hidden; }
-    .main { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; gap: 20px; }
+    
+    main { flex: 1; display: grid; grid-template-columns: 1fr 400px; gap: 1px; background: var(--border); overflow: hidden; }
+    .analytics-view { display: none; grid-column: span 2; background: var(--bg); padding: 24px; overflow-y: auto; }
+    .analytics-view.active { display: block; }
+    
+    .view-container { display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
     .sidebar { width: 340px; border-left: 1px solid var(--border); background: var(--panel); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
     
     .kpi-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
@@ -102,7 +106,6 @@
     .spinner { width: 40px; height: 40px; border: 3px solid rgba(59,130,246,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div id="loading-overlay" class="loading-overlay">
@@ -119,8 +122,9 @@
       </div>
     </div>
     <nav class="nav-tabs">
-      <button class="nav-tab active" data-tab="playground" onclick="switchThemeTab(this)">PLAYGROUND</button>
-      <button class="nav-tab" data-tab="docs" onclick="switchThemeTab(this)">API DOCS</button>
+      <button class="nav-tab active" data-tab="lab">Laboratory</button>
+      <button class="nav-tab" data-tab="analytics">Analytics</button>
+      <button class="nav-tab" data-tab="docs">Documentation</button>
     </nav>
     <div class="header-status">
       <div id="status-text" style="font-size: 11px; font-weight: 700; color: var(--accent);">CONNECTING...</div>
@@ -366,6 +370,58 @@ GET  /schema -> Environment Definitions
       window.app = new LabApp();
       setTimeout(() => document.getElementById('loading-overlay').classList.add('hidden'), 500);
     };
+    // Tab Switching
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        const target = tab.getAttribute('data-tab');
+        document.getElementById('analytics-tab').classList.remove('active');
+        document.querySelector('.view-container').style.display = 'none';
+        document.querySelector('aside').style.display = 'none';
+
+        if (target === 'analytics') {
+          document.getElementById('analytics-tab').classList.add('active');
+          renderCharts();
+        } else if (target === 'lab') {
+          document.querySelector('.view-container').style.display = 'flex';
+          document.querySelector('aside').style.display = 'flex';
+        }
+      });
+    });
+
+    function renderCharts() {
+      const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+      new Chart(scoreCtx, {
+        type: 'line',
+        data: {
+          labels: Array.from({length: 10}, (_, i) => `Seed ${i+1}`),
+          datasets: [{
+            label: 'Crystalline Matching Score',
+            data: [0.758, 0.802, 0.790, 0.801, 0.858, 0.840, 0.812, 0.820, 0.829, 0.836],
+            borderColor: '#3b82f6',
+            tension: 0.4,
+            fill: true,
+            backgroundColor: 'rgba(59, 130, 246, 0.1)'
+          }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+      });
+
+      const modeCtx = document.getElementById('modeChart').getContext('2d');
+      new Chart(modeCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Heuristic (Baseline)', 'LLM-Augmented'],
+          datasets: [{
+            data: [0.831, 0.804],
+            backgroundColor: ['#10b981', '#3b82f6']
+          }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+      });
+    }
   </script>
 </body>
 </html>
