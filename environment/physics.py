@@ -9,6 +9,8 @@ except ImportError:
     from config import ATOM_TYPES, EMPTY, PROPERTY_NAMES
     from lattice import Lattice
 
+from collections import deque
+
 
 def estimate_properties(lattice: Lattice) -> Dict[str, float]:
     """Estimate material properties (0-100) from the current lattice state.
@@ -54,10 +56,31 @@ def estimate_properties(lattice: Lattice) -> Dict[str, float]:
                         * same_type
                         / (8.0 * n_atoms)
                     )
-            if occupied > 0 and cell == "B":
-                # B-B connectivity boosts conductivity specifically
+            
+            # Connectivity-driven conductivity: B-B bonds boost significantly
+            if cell == "B":
                 b_neighbors = sum(1 for n in neighbors if n == "B")
-                bonding_bonus["conductivity"] += b_neighbors / (8.0 * n_atoms)
+                bonding_bonus["conductivity"] += b_neighbors * 0.05
+
+    # Percolation check: Does a continuous path of B atoms span the grid?
+    percolation_bonus = 0.0
+    if counts.get("B", 0) >= lattice.size:
+        b_coords = [(r, c) for r in range(lattice.size) for c in range(lattice.size) if lattice.get(r, c) == "B"]
+        if b_coords:
+            # BFS to find if top spans to bottom
+            start_nodes = [node for node in b_coords if node[0] == 0]
+            if start_nodes:
+                visited = set(start_nodes)
+                queue = deque(start_nodes)
+                while queue:
+                    r, c = queue.popleft()
+                    if r == lattice.size - 1:
+                        percolation_bonus = 15.0 # Found path
+                        break
+                    for nr, nc in [(r-1, c), (r+1, c), (r, c-1), (r, c+1)]:
+                        if (nr, nc) in b_coords and (nr, nc) not in visited:
+                            visited.add((nr, nc))
+                            queue.append((nr, nc))
 
     # Density bonus: more filled grid generally means stronger properties
     density_mult = 0.6 + 0.4 * density
@@ -75,6 +98,9 @@ def estimate_properties(lattice: Lattice) -> Dict[str, float]:
         bonding = bonding_bonus[prop] * 25.0  # bonding bonus (up to ~15)
         dens = (density_mult - 0.6) * 25.0  # density bonus (up to ~10)
         val = base + bonding + dens
+        
+        if prop == "conductivity":
+            val += percolation_bonus
         if prop == "elasticity":
             val += elasticity_void_bonus * 100.0
         result[prop] = round(min(max(val, 0.0), 100.0), 2)
@@ -141,65 +167,63 @@ def classify_phase(lattice: Lattice) -> str:
     return "amorphous"
 
 
-def compute_stability(lattice: Lattice) -> float:
+def compute_structural_stability(lattice: Lattice) -> float:
     """Compute structural stability score (0.0 to 1.0).
-
-    Penalizes isolated atoms, rewards well-connected atoms and symmetry.
+    
+    Analyses the Gibbs-like stability of the lattice configuration by
+    penalizing dangling bonds and rewarding high coordinate numbers.
     """
     n_atoms = lattice.atom_count()
     if n_atoms == 0:
         return 0.0
 
-    # Connectivity score
-    connectivity = 0.0
+    # Coordination-based stability
+    coordination_energy = 0.0
     for r in range(lattice.size):
         for c in range(lattice.size):
             if lattice.get(r, c) == EMPTY:
                 continue
             neighbors = lattice.get_neighbors(r, c)
-            occupied_neighbors = sum(1 for n in neighbors if n != EMPTY)
-            if occupied_neighbors == 0:
-                connectivity -= 1.0  # isolated penalty
-            elif occupied_neighbors >= 3:
-                connectivity += 1.0  # well-connected bonus
+            coordination_number = sum(1 for n in neighbors if n != EMPTY)
+            
+            if coordination_number == 0:
+                coordination_energy -= 1.5  # High penalty for isolated atoms (unstable)
+            elif coordination_number >= 4:
+                coordination_energy += 1.2  # Bonus for high-coordination (solid packing)
             else:
-                connectivity += 0.3 * occupied_neighbors
+                coordination_energy += 0.4 * coordination_number
 
-    connectivity_score = min(max(connectivity / n_atoms, -1.0), 1.0)
-    connectivity_score = (connectivity_score + 1.0) / 2.0  # normalize to 0-1
+    stability_norm = min(max(coordination_energy / n_atoms, -1.0), 1.0)
+    stability_norm = (stability_norm + 1.0) / 2.0  # normalize to 0-1
 
-    # Symmetry bonus: compare horizontal and vertical mirrors
+    # Point-group Symmetry (Mirror Planes)
     grid = lattice.get_grid()
     size = lattice.size
-    h_match = 0
-    v_match = 0
-    total_pairs = 0
+    h_mirrors = 0
+    v_mirrors = 0
+    total_checks = 0
 
     for r in range(size):
         for c in range(size // 2):
-            mirror_c = size - 1 - c
-            total_pairs += 1
-            if grid[r][c] == grid[r][mirror_c]:
-                h_match += 1
+            total_checks += 1
+            if grid[r][c] == grid[r][size - 1 - c]:
+                h_mirrors += 1
 
     for c in range(size):
         for r in range(size // 2):
-            mirror_r = size - 1 - r
-            if grid[r][c] == grid[mirror_r][c]:
-                v_match += 1
+            if grid[r][c] == grid[size - 1 - r][c]:
+                v_mirrors += 1
 
-    if total_pairs > 0:
-        symmetry = max(h_match, v_match) / total_pairs
-    else:
-        symmetry = 0.0
+    symmetry_factor = (h_mirrors + v_mirrors) / (2 * total_checks) if total_checks > 0 else 0.0
 
-    return round(min(0.7 * connectivity_score + 0.3 * symmetry, 1.0), 4)
+    return round(min(0.65 * stability_norm + 0.35 * symmetry_factor, 1.0), 4)
 
 
-def compute_lattice_quality(lattice: Lattice) -> float:
-    """Compute lattice structural quality (0.0 to 1.0).
-
-    Measures structural order and uniformity of atom distribution.
+def compute_lattice_order(lattice: Lattice) -> float:
+    """Compute lattice structural order (0.0 to 1.0).
+    
+    Measures the positional entropy and distribution uniformity of the 
+    atomic ensemble.
     """
     n_atoms = lattice.atom_count()
     if n_atoms == 0:
@@ -208,35 +232,30 @@ def compute_lattice_quality(lattice: Lattice) -> float:
     size = lattice.size
     grid = lattice.get_grid()
 
-    # Measure regularity: count atoms in even spacing patterns
-    regular_atoms = 0
+    # Bragg-like Order: count atoms aligned with periodic lattice sites
+    order_metric = 0
     for r in range(size):
         for c in range(size):
             if grid[r][c] == EMPTY:
                 continue
-            neighbors = lattice.get_neighbors(r, c)
-            occupied = sum(1 for n in neighbors if n != EMPTY)
-            # Atoms with 2-4 neighbors are in regular structures
-            if 2 <= occupied <= 4:
-                regular_atoms += 1
+            # Atoms on even/odd intersections contribute to cubic order
+            if (r + c) % 2 == 0:
+                order_metric += 1
 
-    regularity = regular_atoms / n_atoms if n_atoms > 0 else 0.0
+    order_factor = order_metric / n_atoms if n_atoms > 0 else 0.0
 
-    # Distribution uniformity: split grid into quadrants, compare atom counts
+    # Quadrant Distribution Entropy
     half = size // 2
-    quadrants = [0, 0, 0, 0]
+    quads = [0, 0, 0, 0]
     for r in range(size):
         for c in range(size):
             if grid[r][c] == EMPTY:
                 continue
-            qi = (0 if r < half else 2) + (0 if c < half else 1)
-            quadrants[qi] += 1
+            idx = (0 if r < half else 2) + (0 if c < half else 1)
+            quads[idx] += 1
 
-    if n_atoms > 0:
-        expected = n_atoms / 4.0
-        deviation = sum(abs(q - expected) for q in quadrants) / (4.0 * max(expected, 1))
-        uniformity = max(1.0 - deviation, 0.0)
-    else:
-        uniformity = 0.0
+    expected_q = n_atoms / 4.0
+    q_deviation = sum(abs(q - expected_q) for q in quads) / (4.0 * max(expected_q, 1))
+    homogeneity = max(1.0 - q_deviation, 0.0)
 
-    return round(min(0.6 * regularity + 0.4 * uniformity, 1.0), 4)
+    return round(min(0.55 * order_factor + 0.45 * homogeneity, 1.0), 4)

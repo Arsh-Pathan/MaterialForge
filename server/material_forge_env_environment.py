@@ -20,8 +20,8 @@ from environment.lattice import Lattice
 from models import MaterialForgeAction, MaterialForgeObservation
 from environment.physics import (
     classify_phase,
-    compute_lattice_quality,
-    compute_stability,
+    compute_lattice_order,
+    compute_structural_stability,
     estimate_properties,
 )
 from scenarios.scenarios import generate_scenario
@@ -81,19 +81,19 @@ class MaterialForgeEnvironment(Environment):
         # Apply action to lattice
         success = self._apply_action(action)
 
-        # Compute current state
+        # Compute current state via physics heuristics
         properties = estimate_properties(self._lattice)
         phase = classify_phase(self._lattice)
-        stability = compute_stability(self._lattice)
-        quality = compute_lattice_quality(self._lattice)
+        stability = compute_structural_stability(self._lattice)
+        order = compute_lattice_order(self._lattice)
 
         # Check termination
         done = self._check_done(properties, phase)
 
-        # Build observation with score breakdown
+        # Build observation with advanced scientific score breakdown
         score_breakdown = {
-            "stability": stability,
-            "lattice_quality": quality,
+            "structural_stability": stability,
+            "lattice_order_index": order,
             "action_valid": 1.0 if success else 0.0,
         }
 
@@ -114,10 +114,11 @@ class MaterialForgeEnvironment(Environment):
                 "scenario_name": self._scenario.get("name"),
                 "tolerance": self._tolerance,
                 "action_success": success,
+                "phase_id": phase,
             },
         )
 
-        # Apply rubric to get reward (delegates to HeuristicRewardRubric.forward)
+        # Apply rubric to get reward
         obs.reward = self._apply_rubric(action, obs)
 
         return obs
@@ -137,14 +138,13 @@ class MaterialForgeEnvironment(Environment):
         return False
 
     def _check_done(self, properties: dict, phase: str) -> bool:
-        """Check if episode should end."""
-        # Step limit
+        """Check if episode should end based on target matching and structural validity."""
         if self._state.step_count >= self._max_steps:
             return True
 
         atom_count = self._lattice.atom_count()
 
-        # Only allow success once a meaningful structure has been built.
+        # Success requires minimal structure size and ordered phase
         if atom_count >= MIN_ATOMS_FOR_COMPLETION and phase in VALID_COMPLETION_PHASES:
             all_within = all(
                 abs(properties.get(p, 0.0) - self._target.get(p, 0.0))
@@ -157,11 +157,11 @@ class MaterialForgeEnvironment(Environment):
         return False
 
     def _build_observation(self, done: bool, reward: float) -> MaterialForgeObservation:
-        """Build an observation from current state."""
+        """Build an observation from the current lattice state."""
         properties = estimate_properties(self._lattice)
         phase = classify_phase(self._lattice)
-        stability = compute_stability(self._lattice)
-        quality = compute_lattice_quality(self._lattice)
+        stability = compute_structural_stability(self._lattice)
+        order = compute_lattice_order(self._lattice)
 
         return MaterialForgeObservation(
             grid=self._lattice.get_grid(),
@@ -173,8 +173,8 @@ class MaterialForgeEnvironment(Environment):
             step_number=self._state.step_count,
             max_steps=self._max_steps,
             score_breakdown={
-                "stability": stability,
-                "lattice_quality": quality,
+                "structural_stability": stability,
+                "lattice_order_index": order,
             },
             done=done,
             reward=reward,

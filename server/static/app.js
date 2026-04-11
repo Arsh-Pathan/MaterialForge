@@ -60,7 +60,7 @@ class MaterialForgeApp {
         step: document.getElementById('kpi-step'),
         reward: document.getElementById('kpi-reward'),
         best: document.getElementById('kpi-best'),
-        phase: document.getElementById('kpi-phase'),
+        orderIndex: document.getElementById('kpi-quality'),
         cost: document.getElementById('kpi-cost'),
         atoms: document.getElementById('kpi-atoms'),
         atomCount: document.getElementById('lat-atom-count'),
@@ -315,9 +315,9 @@ class MaterialForgeApp {
     this.els.selectedCell.textContent = `${this.state.selectedCell.r}, ${this.state.selectedCell.c}`;
     this.els.quickActionDisplay.textContent = 'PLACE';
 
-    const phase = obs.phase || 'amorphous';
-    this.els.kpi.phase.textContent = phase;
-    this.els.kpi.phase.className = 'kpi-value phase-' + phase;
+    const orderIdx = obs.score_breakdown?.lattice_order_index ?? 0;
+    this.els.kpi.orderIndex.textContent = orderIdx.toFixed(3);
+    this.els.kpi.orderIndex.className = 'kpi-value phase-' + (obs.phase || 'amorphous');
 
     // Property bars
     ['hardness', 'conductivity', 'thermal_resistance', 'elasticity'].forEach(p => {
@@ -329,10 +329,10 @@ class MaterialForgeApp {
     });
 
     const sb = obs.score_breakdown || {};
-    document.getElementById('sc-stability').textContent = (sb.stability ?? 0).toFixed(3);
-    document.getElementById('sc-quality').textContent   = (sb.lattice_quality ?? 0).toFixed(3);
-    document.getElementById('sb-stability').style.width = ((sb.stability ?? 0) * 100) + '%';
-    document.getElementById('sb-quality').style.width   = ((sb.lattice_quality ?? 0) * 100) + '%';
+    document.getElementById('sc-stability').textContent = (sb.structural_stability ?? 0).toFixed(3);
+    document.getElementById('sc-quality').textContent   = (sb.lattice_order_index ?? 0).toFixed(3);
+    document.getElementById('sb-stability').style.width = ((sb.structural_stability ?? 0) * 100) + '%';
+    document.getElementById('sb-quality').style.width   = ((sb.lattice_order_index ?? 0) * 100) + '%';
 
     if (obs.metadata && this.els.kpi.episodeId) {
       this.els.kpi.episodeId.textContent = `scenario: ${obs.metadata.scenario_name || 'random'} · diff: ${obs.metadata.difficulty || '—'}`;

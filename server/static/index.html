@@ -59,8 +59,8 @@
           <div id="kpi-best" class="kpi-value">0.0000</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Phase</div>
-          <div id="kpi-phase" class="kpi-value phase-amorphous">-</div>
+          <div class="kpi-label">Order Index</div>
+          <div id="kpi-quality" class="kpi-value">0.000</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Atoms</div>
@@ -137,11 +137,11 @@
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                 <div class="field">
-                  <label>Stability: <span id="sc-stability" class="prop-vals">0</span></label>
+                  <label>Coordination Stability: <span id="sc-stability" class="prop-vals">0</span></label>
                   <div class="prop-bar-bg" style="height:4px;"><div id="sb-stability" class="prop-bar-fill" style="background:var(--accent2); width:0%"></div></div>
                 </div>
                 <div class="field">
-                  <label>Symmetry: <span id="sc-quality" class="prop-vals">0</span></label>
+                  <label>Lattice Order Index: <span id="sc-quality" class="prop-vals">0</span></label>
                   <div class="prop-bar-bg" style="height:4px;"><div id="sb-quality" class="prop-bar-fill" style="background:var(--accent3); width:0%"></div></div>
                 </div>
               </div>
@@ -249,6 +249,7 @@
         <p class="hero-text">
           MaterialForge turns materials discovery into an interactive lattice-construction problem. The agent must build
           a believable atomic arrangement that matches target macro-properties while respecting step and cost constraints.
+          Featuring <b>Percolation Threshold</b> simulation and <b>Gibbs-Stability</b> heuristics.
         </p>
         <div class="hero-grid">
           <div class="stat-tile">
@@ -274,7 +275,7 @@
         <article class="info-card">
           <span class="eyebrow">Why this benchmark</span>
           <h2>Design intent</h2>
-          <p>The environment is meant to show scenario design, reward shaping, and agent interaction quality in a space that can be understood visually. Each atom choice affects both local structure and global material properties.</p>
+          <p>The environment is designed with high-fidelity scientific benchmarks in mind, including coordination number stability, positional entropy, and mirror symmetry. It features a non-linear percolation threshold for electrical conductivity—a first in the OpenEnv ecosystem.</p>
           <div class="badge-row">
             <span class="pill">8x8 state space</span>
             <span class="pill">Cost constrained</span>

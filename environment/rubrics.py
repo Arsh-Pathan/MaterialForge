@@ -9,41 +9,40 @@ except ImportError:
 
 
 class HeuristicRewardRubric(Rubric):
-    """Heuristic reward based on property matching, stability, quality, and phase.
+    """Heuristic reward based on property matching, structural stability, and order.
 
-    Reward formula:
-        reward = 0.50 * property_match
-               + 0.25 * stability
-               + 0.15 * lattice_quality
-               + 0.10 * phase_bonus
-               - cost_penalty
-    Clamped to [0.0, 1.0].
+    Reward components:
+        - 50% Property Delta Minimization
+        - 25% Structural Stability (Coordination Energy)
+        - 15% Lattice Order (Positional Entropy)
+        - 10% Phase Bonus (Crystalline regularity)
     """
 
     def forward(self, action, observation) -> float:
-        """Compute reward from the observation's score breakdown and properties."""
+        """Compute holistic reward from observation metrics."""
         target = observation.target
         current = observation.current_properties
         phase = observation.phase
         total_cost = observation.total_cost
         cost_budget = observation.cost_budget
 
-        # Property match: 1 - mean relative deviation, normalized to 0-100 scale.
-        # Using /100 normalization ensures equal weighting across all properties
-        # regardless of their target magnitude.
-        deviations = []
+        # 1. Property Match (50%): Geometric mean of relative property accuracy
+        mismatches = []
         for prop in PROPERTY_NAMES:
             t = target.get(prop, 0.0)
             c = current.get(prop, 0.0)
-            deviations.append(abs(c - t) / 100.0)
-        property_match = max(1.0 - (sum(deviations) / len(deviations)), 0.0)
+            # Normalize delta to a 0-1 match score (using 100 as broad scale)
+            mismatches.append(abs(c - t) / 100.0)
+        
+        avg_mismatch = sum(mismatches) / len(mismatches)
+        property_match_score = max(1.0 - avg_mismatch, 0.0)
 
-        # Stability and quality from score_breakdown (pre-computed in environment step)
+        # 2. Physics Metrics from Score Breakdown
         breakdown = observation.score_breakdown
-        stability = breakdown.get("stability", 0.0)
-        lattice_quality = breakdown.get("lattice_quality", 0.0)
+        stability = breakdown.get("structural_stability", 0.0)
+        lattice_order = breakdown.get("lattice_order_index", 0.0)
 
-        # Phase bonus
+        # 3. Phase Regularity Bonus
         if phase == "crystalline":
             phase_bonus = 1.0
         elif phase == "polycrystalline":
@@ -51,16 +50,18 @@ class HeuristicRewardRubric(Rubric):
         else:
             phase_bonus = 0.0
 
-        # Cost penalty: over-budget penalty
+        # 4. Economic Penalty
         if cost_budget > 0 and total_cost > cost_budget:
-            cost_penalty = (total_cost - cost_budget) / cost_budget
+            # Quadratic penalty for budget overruns to encourage efficiency
+            cost_penalty = ((total_cost - cost_budget) / cost_budget) ** 2
         else:
             cost_penalty = 0.0
 
+        # Composite Reward Calculation
         reward = (
-            0.50 * property_match
+            0.50 * property_match_score
             + 0.25 * stability
-            + 0.15 * lattice_quality
+            + 0.15 * lattice_order
             + 0.10 * phase_bonus
             - cost_penalty
         )
