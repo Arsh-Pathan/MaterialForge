@@ -56,8 +56,8 @@ if _STATIC_DIR.is_dir():
     from fastapi.responses import FileResponse, RedirectResponse
     from fastapi.staticfiles import StaticFiles
 
-    # Mount the static directory at /assets or similar if needed for CSS/JS
-    app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static_assets")
+    # Mount the static directory at /playground to match the HTML asset references
+    app.mount("/playground", StaticFiles(directory=str(_STATIC_DIR), html=True), name="playground")
 
     # Handle legacy system links without redirects to avoid HF proxy breakage
     @app.get("/api", include_in_schema=False)
@@ -89,7 +89,7 @@ if _STATIC_DIR.is_dir():
         r = app.routes[i]
         if hasattr(r, "path") and r.path in ("/", "/web", "/playground", "/api", "/health"):
             custom_routes.append(app.routes.pop(i))
-        elif hasattr(r, "path") and r.path.startswith("/static"):
+        elif hasattr(r, "path") and r.path.startswith("/playground"):
             custom_routes.append(app.routes.pop(i))
     
     for r in reversed(custom_routes):

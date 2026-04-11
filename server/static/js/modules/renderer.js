@@ -1,6 +1,6 @@
 /**
  * LatticeRenderer Module
- * Handles high-fidelity canvas drawing.
+ * Handles professional canvas drawing without glow.
  */
 export class LatticeRenderer {
   constructor(canvasEl, atomColors) {
@@ -18,7 +18,7 @@ export class LatticeRenderer {
     ctx.clearRect(0, 0, size, size);
     
     // Draw grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.strokeStyle = '#2d3748'; /* Match bg-border */
     ctx.lineWidth = 1;
     for (let i = 0; i <= this.gridSize; i++) {
       ctx.beginPath();
@@ -43,17 +43,23 @@ export class LatticeRenderer {
     const { ctx } = this;
     const x = c * cellSize + cellSize / 2;
     const y = r * cellSize + cellSize / 2;
-    const radius = cellSize * 0.35;
+    const radius = cellSize * 0.38;
 
+    // Draw a clean flat circle
     ctx.fillStyle = this.atomColors[type] || '#fff';
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
     
-    // Glow effect
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = ctx.fillStyle;
+    // Subtle border for the atom
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1;
     ctx.stroke();
-    ctx.shadowBlur = 0;
+
+    // Small highlight for depth (not a glow)
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.beginPath();
+    ctx.arc(x - radius * 0.3, y - radius * 0.3, radius * 0.2, 0, Math.PI * 2);
+    ctx.fill();
   }
 }

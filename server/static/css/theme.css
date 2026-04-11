@@ -1,37 +1,52 @@
 :root {
-  --bg-primary:   #0a0e14;
-  --bg-secondary: #111823;
-  --bg-panel:     #161f2d;
-  --bg-border:    #1e293b;
+  /* Google Professional Dark Theme Palette */
+  --bg-primary:   #0b0e14; /* Deep neutral background */
+  --bg-secondary: #131924; /* Sidebar/Header background */
+  --bg-panel:     #1c2533; /* Card/Panel background */
+  --bg-card:      #1c2533;
+  --bg-border:    #2d3748; /* Subtle borders */
+  --bg-input:     #0b0e14;
   
-  --accent:       #00d4aa;
-  --accent-glow:  rgba(0, 212, 170, 0.4);
-  --accent2:      #3b82f6;
-  --accent3:      #f59e0b;
+  /* Brand Discovery - Professional Colors */
+  --accent:       #4285f4; /* Google Blue */
+  --accent-soft:  rgba(66, 133, 244, 0.1);
+  --accent2:      #34a853; /* Google Green */
+  --accent3:      #fbbc05; /* Google Yellow */
+  --accent-err:   #ea4335; /* Google Red */
   
-  --text-1:       #f8fafc;
-  --text-2:       #94a3b8;
-  --text-3:       #64748b;
+  /* Semantic Text */
+  --text-primary:   #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
   
-  --atom-A:       #ef4444;
-  --atom-B:       #3b82f6;
-  --atom-C:       #f59e0b;
-  --atom-P:       #8b5cf6;
+  /* Atom Species Palette - Flat & Pro */
+  --atom-A:       #ef4444; /* Metal Core */
+  --atom-B:       #3b82f6; /* Cond. Blue */
+  --atom-C:       #f59e0b; /* Ceram. Gold */
+  --atom-P:       #a855f7; /* Poly. Purple */
   
   --mono: 'JetBrains Mono', monospace;
-  --sans: 'Inter', system-ui, sans-serif;
+  --sans: 'Inter', system-ui, -apple-system, sans-serif;
   
-  --shadow-sm: 0 4px 12px rgba(0,0,0,0.5);
-  --glass: rgba(22, 31, 45, 0.7);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  
+  --shadow-subtle: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
   background-color: var(--bg-primary);
-  color: var(--text-1);
+  color: var(--text-primary);
   font-family: var(--sans);
   height: 100vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+button, input, select {
+  font-family: inherit;
 }
