@@ -410,14 +410,48 @@ async def run_episode(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> floa
     return final_score
 
 
+
+def start_environment_server(port: int = 7860):
+    import urllib.request
+    import urllib.error
+    import subprocess
+    import sys
+    import time
+    import os
+
+    try:
+        req = urllib.request.Request(f"http://localhost:{port}/health")
+        with urllib.request.urlopen(req, timeout=2) as response:
+            if response.status == 200:
+                print(f"[INFO] Environment server already running on port {port}", flush=True)
+                return None
+    except Exception:
+        pass
+
+    print(f"[INFO] Starting environment server on port {port}...", flush=True)
+
+    try:
+        env = os.environ.copy()
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "uvicorn", "server.app:app", "--host", "127.0.0.1", "--port", str(port)],
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(4)
+        if proc.poll() is None:
+            return proc
+    except Exception as e:
+        print(f"[WARNING] Could not start environment server: {e}", flush=True)
+    return None
+
 async def main():
     """Main benchmark entry point."""
     api_url = os.environ.get("API_BASE_URL")
-    api_key = os.environ.get("API_KEY")
+    api_key = os.environ.get("API_KEY") or os.environ.get("HF_TOKEN")
     
     if not (api_url and api_key):
         print("[ERROR] Missing required API_BASE_URL or API_KEY environment variables.", flush=True)
-        # Still output start/end for the validator to see progress if applicable
         for task in TASKS:
             log_start(task["name"], BENCHMARK_ID, MODEL_NAME)
             log_end(False, 0, MIN_TASK_SCORE, [])
@@ -426,7 +460,6 @@ async def main():
     print(f"[DEBUG] Initializing OpenAI client with base_url={api_url}", flush=True)
     client = OpenAI(base_url=api_url, api_key=api_key)
 
-    # Warmup call: critical for the validator to see API traffic early
     try:
         print("[DEBUG] Performing LLM warmup call...", flush=True)
         warmup = client.chat.completions.create(
@@ -441,27 +474,25 @@ async def main():
         print(f"[DEBUG] LLM warmup success: {warmup.choices[0].message.content.strip()}", flush=True)
     except Exception as exc:
         print(f"[ERROR] LLM warmup failed: {exc}", flush=True)
-        # We continue anyway, as the actual tasks might still work or provide more info
 
+    server_proc = None
     try:
-        # Initialize environment connection
         if SPACE_URL:
             print(f"[DEBUG] Connecting to remote environment at {SPACE_URL}", flush=True)
             env = MaterialForgeEnv(base_url=SPACE_URL)
             await env.connect()
         elif os.getenv("USE_LOCALHOST") or os.getenv("PORT"):
-            # If PORT is set (common in container environments), default to localhost
             host = os.getenv("HOST", "localhost")
-            port = os.getenv("PORT", "8000")
+            port = os.getenv("PORT", "7860")
             url = f"http://{host}:{port}"
             print(f"[DEBUG] Connecting to local environment at {url}", flush=True)
             env = MaterialForgeEnv(base_url=url)
             await env.connect()
         else:
-            print(f"[DEBUG] Starting environment from Docker image: {IMAGE_NAME}", flush=True)
-            env = await MaterialForgeEnv.from_docker_image(IMAGE_NAME)
+            server_proc = start_environment_server(port=7860)
+            env = MaterialForgeEnv(base_url="http://127.0.0.1:7860")
+            await env.connect()
             
-        # Run tasks
         scores = []
         for task in TASKS:
             scores.append(await run_episode(env, client, task))
@@ -469,7 +500,7 @@ async def main():
         print(f"\n[SUMMARY] Avg Score: {sum(scores)/len(scores):.3f}", flush=True)
         
     except Exception as e:
-        print(f"[ERROR] Runtime initialization failed: {e}", flush=True)
+        print(f"[ERROR] Runtime execution failed: {e}", flush=True)
         import traceback
         traceback.print_exc()
     finally:
@@ -477,6 +508,23 @@ async def main():
             await env.close()
         except:
             pass
+        if server_proc:
+            try:
+                server_proc.terminate()
+                server_proc.wait(timeout=5)
+            except:
+                try:
+                    server_proc.kill()
+                except:
+                    pass
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        import traceback
+        import sys
+        print(f"[FATAL] Unhandled exception: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(0)
+

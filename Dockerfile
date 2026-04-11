@@ -75,17 +75,15 @@ ENV PYTHONPATH="/app:$PYTHONPATH"
 # It looks for /app/README.md or ENV_README_PATH
 ENV ENV_README_PATH=/app/README.md
 
-# OpenEnv's LocalDockerProvider hardcodes host:8000 -> container:8000
-# We use 8000 as the primary port. For Hugging Face Spaces, 
-# set app_port: 8000 in the README.md metadata.
-ENV PORT=8000
-EXPOSE 8000
+# OpenEnv's LocalDockerProvider uses 8000 by default, but HF Spaces uses 7860 natively.
+# We map directly to 7860 for compatibility with standard HF networking configurations.
+ENV PORT=7860
+EXPOSE 7860
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:7860/health || exit 1
 
 # Run the FastAPI server
-# OpenEnv's LocalDockerProvider hardcodes -p <host>:8000, so we MUST listen on 8000.
-# Hugging Face Spaces will work correctly on port 8000 if app_port: 8000 is set in README.md
+ENTRYPOINT []
 CMD ["sh", "-c", "uvicorn server.app:app --host 0.0.0.0 --port ${PORT}"]

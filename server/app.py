@@ -56,17 +56,21 @@ if _STATIC_DIR.is_dir():
     from fastapi.responses import FileResponse, RedirectResponse
     from fastapi.staticfiles import StaticFiles
 
-    # Mount the dashboard at /playground
-    app.mount("/playground", StaticFiles(directory=str(_STATIC_DIR), html=True), name="playground")
+    # Mount the static directory at /assets or similar if needed for CSS/JS
+    app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static_assets")
 
-    # Handle legacy system links
+    # Handle legacy system links without redirects to avoid HF proxy breakage
     @app.get("/api", include_in_schema=False)
     def api_docs_redirect():
         return RedirectResponse(url="/docs")
 
     @app.get("/web", include_in_schema=False)
     def web_legacy_redirect():
-        return RedirectResponse(url="/playground")
+        return FileResponse(str(_STATIC_DIR / "index.html"))
+
+    @app.get("/playground", include_in_schema=False)
+    def serve_playground():
+        return FileResponse(str(_STATIC_DIR / "index.html"))
 
     @app.get("/", include_in_schema=False)
     def serve_dashboard():
@@ -75,11 +79,12 @@ if _STATIC_DIR.is_dir():
 
     # Explicitly move our custom routes to the front of the routing table
     # This ensures they take precedence over any default OpenEnv/Gradio routes
-    # that might be auto-mounted at the root.
     custom_routes = []
     for i in range(len(app.routes) - 1, -1, -1):
         r = app.routes[i]
-        if hasattr(r, "path") and (r.path == "/" or r.path.startswith("/playground")):
+        if hasattr(r, "path") and r.path in ("/", "/web", "/playground", "/api"):
+            custom_routes.append(app.routes.pop(i))
+        elif hasattr(r, "path") and r.path.startswith("/static"):
             custom_routes.append(app.routes.pop(i))
     
     for r in reversed(custom_routes):
