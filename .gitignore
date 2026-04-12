@@ -10,9 +10,4 @@ outputs/
 .env
 .pytest_cache/
 scratch/
-benchmark_*.csv
-summary_*.txt
-benchmark.py
-run_ollama.bat
-run_heuristic.bat
-analytical_benchmark.py
+RESEARCH.md

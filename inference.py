@@ -39,16 +39,18 @@ except ImportError:
     from material_forge_env.environment.physics import classify_phase, estimate_properties
 
 # Global Configuration
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+HF_TOKEN = os.getenv("HF_TOKEN")
 IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "material-forge-env:latest")
 SPACE_URL = os.getenv("SPACE_URL")
 BENCHMARK_ID = "material_forge_env"
 
 # Task Definitions
 TASKS = [
+    {"name": "basic-synthesis", "difficulty": "easy", "seed": 101},
     {"name": "diamond-like", "difficulty": "medium", "seed": 42},
-    {"name": "conductor", "difficulty": "medium", "seed": 43},
-    {"name": "heat-shield", "difficulty": "medium", "seed": 44},
+    {"name": "superconductor-analogue", "difficulty": "hard", "seed": 999},
 ]
 
 # Hyperparameters
@@ -100,11 +102,11 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     )
 
 
-def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+def log_end(success: bool, steps: int, rewards: List[float]) -> None:
     """Standardized [END] reporting."""
     rewards_str = ",".join(f"{reward:.2f}" for reward in rewards)
     print(
-        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}",
         flush=True,
     )
 
@@ -406,7 +408,7 @@ async def run_episode(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> floa
         print(f"[DEBUG] Episode {task['name']} aborted: {e}", flush=True)
 
     final_score = normalize_score(max(rewards) if rewards else 0.0)
-    log_end(final_score >= SUCCESS_THRESHOLD, step, final_score, rewards)
+    log_end(final_score >= SUCCESS_THRESHOLD, step, rewards)
     return final_score
 
 
@@ -447,14 +449,14 @@ def start_environment_server(port: int = 7860):
 
 async def main():
     """Main benchmark entry point."""
-    api_url = os.environ.get("API_BASE_URL")
-    api_key = os.environ.get("API_KEY") or os.environ.get("HF_TOKEN")
+    api_url = API_BASE_URL
+    api_key = HF_TOKEN
     
-    if not (api_url and api_key):
-        print("[ERROR] Missing required API_BASE_URL or API_KEY environment variables.", flush=True)
+    if not api_key:
+        print("[ERROR] Missing required HF_TOKEN environment variable.", flush=True)
         for task in TASKS:
             log_start(task["name"], BENCHMARK_ID, MODEL_NAME)
-            log_end(False, 0, MIN_TASK_SCORE, [])
+            log_end(False, 0, [])
         return
 
     print(f"[DEBUG] Initializing OpenAI client with base_url={api_url}", flush=True)

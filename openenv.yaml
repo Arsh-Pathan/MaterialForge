@@ -11,10 +11,28 @@ description: >
   properties: hardness, conductivity, thermal resistance, and elasticity.
 
 tasks:
+  - name: basic-synthesis
+    description: >
+      Synthesize a balanced material with moderate hardness and elasticity.
+      Goal: Get comfortable with atomic placement and budget management.
+    difficulty: easy
+    seed: 101
+    max_steps: 30
+    grading:
+      metric: best_reward
+      thresholds:
+        pass: 0.25
+        good: 0.50
+        excellent: 0.70
+    baseline:
+      random_agent: 0.05
+      heuristic_agent: 0.38
+      llm_agent: 0.65
+
   - name: diamond-like
     description: >
       Design a diamond-like crystal with high hardness and thermal resistance.
-      Target: hardness ~80, thermal_resistance ~70, moderate other properties.
+      Target: hardness ~80, thermal_resistance ~70. Requires high symmetry for crystalline phase.
     difficulty: medium
     seed: 42
     max_steps: 50
@@ -29,41 +47,23 @@ tasks:
       heuristic_agent: 0.45
       llm_agent: 0.72
 
-  - name: conductor
+  - name: superconductor-analogue
     description: >
-      Design an electrical conductor with high conductivity and elasticity.
-      Target: conductivity ~85, elasticity ~60, low hardness acceptable.
-    difficulty: medium
-    seed: 43
-    max_steps: 50
+      Synthesize a high-conductivity lattice with significant structural stability constraints.
+      Target: conductivity > 90. Requires identifying long-range percolation pathways of Species B.
+    difficulty: hard
+    seed: 999
+    max_steps: 80
     grading:
       metric: best_reward
       thresholds:
-        pass: 0.30
-        good: 0.55
-        excellent: 0.75
+        pass: 0.35
+        good: 0.60
+        excellent: 0.80
     baseline:
-      random_agent: 0.07
-      heuristic_agent: 0.42
-      llm_agent: 0.68
-
-  - name: heat-shield
-    description: >
-      Design a thermal barrier with maximum thermal resistance.
-      Target: thermal_resistance ~90, hardness ~50, balanced other properties.
-    difficulty: medium
-    seed: 44
-    max_steps: 50
-    grading:
-      metric: best_reward
-      thresholds:
-        pass: 0.30
-        good: 0.55
-        excellent: 0.75
-    baseline:
-      random_agent: 0.06
-      heuristic_agent: 0.40
-      llm_agent: 0.70
+      random_agent: 0.04
+      heuristic_agent: 0.35
+      llm_agent: 0.62
 
 reward_formula: >
   reward = 0.50 * property_match + 0.25 * stability + 0.15 * lattice_quality

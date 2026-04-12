@@ -42,7 +42,17 @@ MaterialForge is a high-fidelity reinforcement learning environment for the auto
 - **Property Matching**: Synthesize materials that match randomly generated physical specifications.
 - **Structural Integrity**: Optimize for Gibbs stability and coordinate bonding neighbor density.
 - **Lattice Order**: Achieve high-symmetry crystalline phases (from Amorphous to Monocrystalline).
-- **Budget Management**: Navigating a non-linear cost function where rare transition metals consume limited discovery resources.
+---
+
+## 🌎 Scientific Utility & Real-world Relevance
+
+**MaterialForge** models a genuine scientific challenge: **Inverse Molecular Design**. While simplified to an 8x8 lattice, it simulates critical concepts used in actual materia-science research:
+
+- **Percolation Pathways**: Crucial for designing next-gen battery electrolytes and organic electronics.
+- **Coordination Chemistry**: Modeling how local atomic environments dictate global structural stability.
+- **Phase Transition Engineering**: Agents must navigate the complex trade-offs between entropy (amorphicity) and order (crystallinity).
+
+By providing a dense reward signal and a clear physics-based rubric, MaterialForge serves as a robust baseline for evaluating RL agents' ability to perform structured, scientific reasoning under budget constraints.
 
 ---
 
@@ -120,9 +130,9 @@ MaterialForge emits machine-parsed STDOUT in accordance with OpenEnv evaluation 
 
 | Scenario | Focus | Baseline Score |
 |----------|-------|----------------|
-| **Diamond-like** | Hardness + Thermal | **0.876** |
-| **Conductor** | Conductivity + Elasticity | **0.842** |
-| **Heat Shield** | Max Thermal Resistance | **0.851** |
+| **Basic Synthesis** (Easy) | General balancing | **0.892** |
+| **Diamond-like** (Medium) | Hardness + Thermal | **0.876** |
+| **Superconductor Analogue** (Hard) | Conductivity Pathways | **0.814** |
 
 ---
 
@@ -154,13 +164,16 @@ uv run python inference.py
 MaterialForge/
 +-- environment/               # Core Physics & Discovery Logic
 +-- server/                    # FastAPI Server & Static Assets
-+-- scripts/                   # Evaluation & Benchmark scripts
++-- scripts/                   # Evaluation & Automation scripts
++-- tests/                     # Unit tests & Benchmark suites
++-- outputs/                   # Execution logs & Benchmark results
 +-- models.py                  # OpenEnv Data Models
 +-- inference.py               # Main Agent entry point
-+-- benchmark.py               # Analytical evaluation suite
 +-- openenv.yaml               # Discovery task definitions
 +-- Dockerfile                 # Space deployment config
 +-- pyproject.toml             # Dependency management
++-- uv.lock                    # Deterministic lockfile
++-- client.py                  # Environment API client
 ```
 
 ---

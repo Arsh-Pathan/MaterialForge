@@ -1,0 +1,11 @@
+==================================================
+📈 FINAL ANALYTICAL REPORT
+==================================================
+Mode:            LLM
+Model:           gemma-4-31b-it
+Total Trials:    100
+Success Rate:    0.0%
+Average Score:   0.001
+Max Score:       0.001
+Min Score:       0.001
+==================================================
