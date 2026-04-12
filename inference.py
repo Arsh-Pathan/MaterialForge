@@ -14,6 +14,7 @@ MANDATORY Submission Variables:
 import asyncio
 import json
 import os
+import sys
 import textwrap
 from dataclasses import dataclass
 from typing import Dict, List, Optional
@@ -366,7 +367,7 @@ async def select_action(client: OpenAI, obs, pool: List[EvaluatedAction]) -> Mat
             if choice is not None:
                 return pool[choice].action
         except Exception as e:
-            print(f"[DEBUG] LLM selection failed: {e}", flush=True)
+            print(f"[DEBUG] LLM selection failed: {e}", file=sys.stderr, flush=True)
 
     # Fallback to the top heuristic action
     return pool[0].action
@@ -402,10 +403,11 @@ async def run_episode(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> floa
             key = get_grid_key(obs.grid)
             state_memory[key] = state_memory.get(key, 0) + 1
             
-            log_step(step, format_action_display(action), reward, res.done, None)
+            error_msg = getattr(res, "error", getattr(res, "last_action_error", None))
+            log_step(step, format_action_display(action), reward, res.done, error_msg)
 
     except Exception as e:
-        print(f"[DEBUG] Episode {task['name']} aborted: {e}", flush=True)
+        print(f"[DEBUG] Episode {task['name']} aborted: {e}", file=sys.stderr, flush=True)
 
     final_score = normalize_score(max(rewards) if rewards else 0.0)
     log_end(final_score >= SUCCESS_THRESHOLD, step, rewards)
@@ -425,12 +427,12 @@ def start_environment_server(port: int = 7860):
         req = urllib.request.Request(f"http://localhost:{port}/health")
         with urllib.request.urlopen(req, timeout=2) as response:
             if response.status == 200:
-                print(f"[INFO] Environment server already running on port {port}", flush=True)
+                print(f"[INFO] Environment server already running on port {port}", file=sys.stderr, flush=True)
                 return None
     except Exception:
         pass
 
-    print(f"[INFO] Starting environment server on port {port}...", flush=True)
+    print(f"[INFO] Starting environment server on port {port}...", file=sys.stderr, flush=True)
 
     try:
         env = os.environ.copy()
@@ -444,7 +446,7 @@ def start_environment_server(port: int = 7860):
         if proc.poll() is None:
             return proc
     except Exception as e:
-        print(f"[WARNING] Could not start environment server: {e}", flush=True)
+        print(f"[WARNING] Could not start environment server: {e}", file=sys.stderr, flush=True)
     return None
 
 async def main():
@@ -453,17 +455,17 @@ async def main():
     api_key = HF_TOKEN
     
     if not api_key:
-        print("[ERROR] Missing required HF_TOKEN environment variable.", flush=True)
+        print("[ERROR] Missing required HF_TOKEN environment variable.", file=sys.stderr, flush=True)
         for task in TASKS:
             log_start(task["name"], BENCHMARK_ID, MODEL_NAME)
             log_end(False, 0, [])
         return
 
-    print(f"[DEBUG] Initializing OpenAI client with base_url={api_url}", flush=True)
+    print(f"[DEBUG] Initializing OpenAI client with base_url={api_url}", file=sys.stderr, flush=True)
     client = OpenAI(base_url=api_url, api_key=api_key)
 
     try:
-        print("[DEBUG] Performing LLM warmup call...", flush=True)
+        print("[DEBUG] Performing LLM warmup call...", file=sys.stderr, flush=True)
         warmup = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
@@ -473,21 +475,21 @@ async def main():
             temperature=0.0,
             max_tokens=8,
         )
-        print(f"[DEBUG] LLM warmup success: {warmup.choices[0].message.content.strip()}", flush=True)
+        print(f"[DEBUG] LLM warmup success: {warmup.choices[0].message.content.strip()}", file=sys.stderr, flush=True)
     except Exception as exc:
-        print(f"[ERROR] LLM warmup failed: {exc}", flush=True)
+        print(f"[ERROR] LLM warmup failed: {exc}", file=sys.stderr, flush=True)
 
     server_proc = None
     try:
         if SPACE_URL:
-            print(f"[DEBUG] Connecting to remote environment at {SPACE_URL}", flush=True)
+            print(f"[DEBUG] Connecting to remote environment at {SPACE_URL}", file=sys.stderr, flush=True)
             env = MaterialForgeEnv(base_url=SPACE_URL)
             await env.connect()
         elif os.getenv("USE_LOCALHOST") or os.getenv("PORT"):
             host = os.getenv("HOST", "localhost")
             port = os.getenv("PORT", "7860")
             url = f"http://{host}:{port}"
-            print(f"[DEBUG] Connecting to local environment at {url}", flush=True)
+            print(f"[DEBUG] Connecting to local environment at {url}", file=sys.stderr, flush=True)
             env = MaterialForgeEnv(base_url=url)
             await env.connect()
         else:
@@ -499,10 +501,10 @@ async def main():
         for task in TASKS:
             scores.append(await run_episode(env, client, task))
             
-        print(f"\n[SUMMARY] Avg Score: {sum(scores)/len(scores):.3f}", flush=True)
+        print(f"\n[SUMMARY] Avg Score: {sum(scores)/len(scores):.3f}", file=sys.stderr, flush=True)
         
     except Exception as e:
-        print(f"[ERROR] Runtime execution failed: {e}", flush=True)
+        print(f"[ERROR] Runtime execution failed: {e}", file=sys.stderr, flush=True)
         import traceback
         traceback.print_exc()
     finally:
