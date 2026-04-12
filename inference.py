@@ -59,8 +59,8 @@ TEMPERATURE = 0.1
 MAX_TOKENS = 160
 SUCCESS_THRESHOLD = 0.3
 PROXY_PROBE_MAX_TOKENS = 8
-MIN_TASK_SCORE = 0.001
-MAX_TASK_SCORE = 0.999
+MIN_TASK_SCORE = 0.01
+MAX_TASK_SCORE = 0.99
 
 # Material Property logic
 PROPERTY_TO_SYMBOL = {
@@ -393,7 +393,8 @@ async def run_episode(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> floa
             
             res = await env.step(action)
             obs = res.observation
-            reward = res.reward if res.reward is not None else 0.0
+            raw_reward = res.reward if res.reward is not None else 0.0
+            reward = normalize_score(raw_reward)
             
             step += 1
             rewards.append(reward)
@@ -458,7 +459,7 @@ async def main():
         print("[ERROR] Missing required HF_TOKEN environment variable.", file=sys.stderr, flush=True)
         for task in TASKS:
             log_start(task["name"], BENCHMARK_ID, MODEL_NAME)
-            log_end(False, 0, [])
+            log_end(False, 0, [MIN_TASK_SCORE])
         return
 
     print(f"[DEBUG] Initializing OpenAI client with base_url={api_url}", file=sys.stderr, flush=True)
