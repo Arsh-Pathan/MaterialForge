@@ -11,13 +11,21 @@ MANDATORY Submission Variables:
 - MODEL_NAME: Target LLM identifier.
 """
 
+import argparse
 import asyncio
 import json
 import os
 import sys
+import time
 import textwrap
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 from openai import OpenAI
 
@@ -59,8 +67,9 @@ TEMPERATURE = 0.1
 MAX_TOKENS = 160
 SUCCESS_THRESHOLD = 0.3
 PROXY_PROBE_MAX_TOKENS = 8
-MIN_TASK_SCORE = 0.01
-MAX_TASK_SCORE = 0.99
+SCORE_EPSILON = 0.10
+REWARD_MIN = 0.10
+REWARD_MAX = 0.90
 
 # Material Property logic
 PROPERTY_TO_SYMBOL = {
@@ -103,18 +112,13 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     )
 
 
-def log_end(success: bool, steps: int, rewards: List[float]) -> None:
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     """Standardized [END] reporting."""
     rewards_str = ",".join(f"{reward:.2f}" for reward in rewards)
     print(
-        f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
         flush=True,
     )
-
-
-def normalize_score(raw_score: float) -> float:
-    """Ensure task scores stay within the required (0, 1) interval."""
-    return min(max(raw_score, MIN_TASK_SCORE), MAX_TASK_SCORE)
 
 
 SYSTEM_PROMPT = """You are an expert Material Scientist assistant.
@@ -373,6 +377,19 @@ async def select_action(client: OpenAI, obs, pool: List[EvaluatedAction]) -> Mat
     return pool[0].action
 
 
+def compute_episode_score(rewards: List[float]) -> float:
+    """Compute mean reward clamped strictly between (0.1, 0.9)."""
+    if not rewards:
+        return REWARD_MIN
+    avg = sum(rewards) / len(rewards)
+    return min(max(avg, REWARD_MIN), REWARD_MAX)
+
+
+def normalize_reward(raw_reward: float) -> float:
+    """Clamp raw reward to strictly between [0.1, 0.9]."""
+    return min(max(raw_reward, REWARD_MIN), REWARD_MAX)
+
+
 async def run_episode(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
     """Executes a single benchmark episode."""
     log_start(task=task["name"], env=BENCHMARK_ID, model=MODEL_NAME)
@@ -394,7 +411,7 @@ async def run_episode(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> floa
             res = await env.step(action)
             obs = res.observation
             raw_reward = res.reward if res.reward is not None else 0.0
-            reward = normalize_score(raw_reward)
+            reward = normalize_reward(raw_reward)
             
             step += 1
             rewards.append(reward)
@@ -410,8 +427,9 @@ async def run_episode(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> floa
     except Exception as e:
         print(f"[DEBUG] Episode {task['name']} aborted: {e}", file=sys.stderr, flush=True)
 
-    final_score = normalize_score(max(rewards) if rewards else 0.0)
-    log_end(final_score >= SUCCESS_THRESHOLD, step, rewards)
+    final_score = compute_episode_score(rewards)
+    is_success = max(rewards) >= SUCCESS_THRESHOLD if rewards else False
+    log_end(is_success, step, final_score, rewards)
     return final_score
 
 
@@ -450,8 +468,16 @@ def start_environment_server(port: int = 7860):
         print(f"[WARNING] Could not start environment server: {e}", file=sys.stderr, flush=True)
     return None
 
+
 async def main():
     """Main benchmark entry point."""
+    parser = argparse.ArgumentParser(description="MaterialForge Inference Script")
+    parser.add_argument("--episodes", type=int, default=1, help="Number of episodes per task")
+    parser.add_argument("--seed-base", type=int, default=100, help="Base seed for reproducibility")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+    
+    args = parser.parse_args()
+
     api_url = API_BASE_URL
     api_key = HF_TOKEN
     
@@ -459,7 +485,7 @@ async def main():
         print("[ERROR] Missing required HF_TOKEN environment variable.", file=sys.stderr, flush=True)
         for task in TASKS:
             log_start(task["name"], BENCHMARK_ID, MODEL_NAME)
-            log_end(False, 0, [MIN_TASK_SCORE])
+            log_end(False, 0, REWARD_MIN, [REWARD_MIN])
         return
 
     print(f"[DEBUG] Initializing OpenAI client with base_url={api_url}", file=sys.stderr, flush=True)
@@ -467,30 +493,24 @@ async def main():
 
     try:
         print("[DEBUG] Performing LLM warmup call...", file=sys.stderr, flush=True)
-        warmup = client.chat.completions.create(
+        client.chat.completions.create(
             model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": "You are a material science assistant."},
-                {"role": "user", "content": "Hello. Response with 'OK'."},
-            ],
+            messages=[{"role": "user", "content": "Hello. Respond with 'OK'."}],
             temperature=0.0,
             max_tokens=8,
         )
-        print(f"[DEBUG] LLM warmup success: {warmup.choices[0].message.content.strip()}", file=sys.stderr, flush=True)
     except Exception as exc:
         print(f"[ERROR] LLM warmup failed: {exc}", file=sys.stderr, flush=True)
 
     server_proc = None
     try:
         if SPACE_URL:
-            print(f"[DEBUG] Connecting to remote environment at {SPACE_URL}", file=sys.stderr, flush=True)
             env = MaterialForgeEnv(base_url=SPACE_URL)
             await env.connect()
         elif os.getenv("USE_LOCALHOST") or os.getenv("PORT"):
             host = os.getenv("HOST", "localhost")
             port = os.getenv("PORT", "7860")
             url = f"http://{host}:{port}"
-            print(f"[DEBUG] Connecting to local environment at {url}", file=sys.stderr, flush=True)
             env = MaterialForgeEnv(base_url=url)
             await env.connect()
         else:
@@ -498,11 +518,17 @@ async def main():
             env = MaterialForgeEnv(base_url="http://127.0.0.1:7860")
             await env.connect()
             
-        scores = []
+        all_scores = []
         for task in TASKS:
-            scores.append(await run_episode(env, client, task))
+            for ep in range(args.episodes):
+                current_task = task.copy()
+                current_task["seed"] = args.seed_base + task.get("seed", 0) + ep
+                
+                score = await run_episode(env, client, current_task)
+                all_scores.append(score)
             
-        print(f"\n[SUMMARY] Avg Score: {sum(scores)/len(scores):.3f}", file=sys.stderr, flush=True)
+        avg_score = sum(all_scores)/len(all_scores) if all_scores else 0.0
+        print(f"\n[SUMMARY] Avg Score: {avg_score:.3f}", file=sys.stderr, flush=True)
         
     except Exception as e:
         print(f"[ERROR] Runtime execution failed: {e}", file=sys.stderr, flush=True)
