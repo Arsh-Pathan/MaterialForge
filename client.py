@@ -12,6 +12,7 @@ except ImportError:
     from material_forge_env.models import MaterialForgeAction, MaterialForgeObservation
 
 
+# Client implementation: manages the WebSocket connection and protocol translation.
 class MaterialForgeEnv(EnvClient[MaterialForgeAction, MaterialForgeObservation, State]):
     """Client for the MaterialForge Environment.
 
@@ -27,6 +28,7 @@ class MaterialForgeEnv(EnvClient[MaterialForgeAction, MaterialForgeObservation, 
         ...     print(result.observation.current_properties)
     """
 
+    # Serialization: converts the Action object into a JSON dictionary for transmission.
     def _step_payload(self, action: MaterialForgeAction) -> Dict:
         """Convert MaterialForgeAction to JSON payload for step message."""
         payload = {
@@ -38,6 +40,7 @@ class MaterialForgeEnv(EnvClient[MaterialForgeAction, MaterialForgeObservation, 
             payload["atom"] = action.atom
         return payload
 
+    # Deserialization: converts the server's JSON response back into a type-safe Observation object.
     def _parse_result(self, payload: Dict) -> StepResult[MaterialForgeObservation]:
         """Parse server response into StepResult[MaterialForgeObservation]."""
         obs_data = payload.get("observation", {})
@@ -63,6 +66,7 @@ class MaterialForgeEnv(EnvClient[MaterialForgeAction, MaterialForgeObservation, 
             done=payload.get("done", False),
         )
 
+    # State Parser: tracks the current episode ID and step count across the session.
     def _parse_state(self, payload: Dict) -> State:
         """Parse server response into State object."""
         return State(

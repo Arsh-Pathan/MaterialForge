@@ -1,4 +1,5 @@
-"""Lattice grid engine for the MaterialForge environment."""
+# Lattice grid engine for the MaterialForge environment.
+# Manages the 8x8 atomic grid state and basic placement operations.
 
 from __future__ import annotations
 
@@ -11,6 +12,7 @@ except ImportError:
     from config import ATOM_TYPES, EMPTY, GRID_SIZE
 
 
+# Core data structure representing the physical workspace where agents place atoms.
 class Lattice:
     """An 8x8 grid representing atomic crystal structure placement."""
 
@@ -18,9 +20,11 @@ class Lattice:
         self.size = size
         self._grid: List[List[str]] = [[EMPTY] * size for _ in range(size)]
 
+    # Helper to ensure actions stay within the 8x8 simulation bounds.
     def _in_bounds(self, row: int, col: int) -> bool:
         return 0 <= row < self.size and 0 <= col < self.size
 
+    # Executes a 'place' action: adds a new atom to an empty coordinate.
     def place(self, row: int, col: int, atom: str) -> bool:
         """Place an atom on an empty cell. Returns True if successful."""
         if not self._in_bounds(row, col):
@@ -32,6 +36,7 @@ class Lattice:
         self._grid[row][col] = atom
         return True
 
+    # Executes a 'replace' action: swaps one atom species for another.
     def replace(self, row: int, col: int, atom: str) -> bool:
         """Replace an existing atom with a different one. Returns True if successful."""
         if not self._in_bounds(row, col):
@@ -45,6 +50,7 @@ class Lattice:
         self._grid[row][col] = atom
         return True
 
+    # Executes a 'remove' action: clears a cell and restores budget.
     def remove(self, row: int, col: int) -> bool:
         """Remove an atom from the grid. Returns True if successful."""
         if not self._in_bounds(row, col):
@@ -60,10 +66,12 @@ class Lattice:
             return EMPTY
         return self._grid[row][col]
 
+    # Serializes the grid for transmission to the agent observation space.
     def get_grid(self) -> List[List[str]]:
         """Return a copy of the grid."""
         return [row[:] for row in self._grid]
 
+    # Aggregates atom counts for property contribution calculations.
     def count_atoms(self) -> Dict[str, int]:
         """Count each atom type on the grid."""
         counts: Dict[str, int] = {sym: 0 for sym in ATOM_TYPES}
@@ -79,6 +87,7 @@ class Lattice:
             1 for row in self._grid for cell in row if cell != EMPTY
         )
 
+    # Calculates the total financial cost of the current configuration.
     def total_cost(self) -> float:
         """Sum of atom costs on the grid."""
         total = 0.0
@@ -88,6 +97,7 @@ class Lattice:
                     total += ATOM_TYPES[cell]["cost"]
         return total
 
+    # Retrieves 8-connected neighbors for structural stability checks.
     def get_neighbors(self, row: int, col: int) -> List[str]:
         """Get contents of 8-connected neighbor cells (excluding out-of-bounds)."""
         neighbors = []
@@ -106,6 +116,7 @@ class Lattice:
         new._grid = copy.deepcopy(self._grid)
         return new
 
+    # Recreates a lattice state from external input, used for lookahead simulations.
     @classmethod
     def from_grid(cls, grid: List[List[str]]) -> Lattice:
         """Reconstruct a Lattice from a grid (e.g., from serialized state)."""

@@ -1,4 +1,5 @@
-"""Heuristic property estimation, phase classification, and structural scoring."""
+# Heuristic property estimation, phase classification, and structural scoring.
+# This module acts as the "Physics Engine" of the environment.
 
 from typing import Dict
 
@@ -12,6 +13,7 @@ except ImportError:
 from collections import deque
 
 
+# Main entry point for property calculation: converts grid state to physical metrics.
 def estimate_properties(lattice: Lattice) -> Dict[str, float]:
     """Estimate material properties (0-100) from the current lattice state.
 
@@ -63,6 +65,7 @@ def estimate_properties(lattice: Lattice) -> Dict[str, float]:
                 bonding_bonus["conductivity"] += b_neighbors * 0.05
 
     # Percolation check: Does a continuous path of B atoms span the grid?
+    # This simulates long-range conductivity pathways.
     percolation_bonus = 0.0
     if counts.get("B", 0) >= lattice.size:
         b_coords = [(r, c) for r in range(lattice.size) for c in range(lattice.size) if lattice.get(r, c) == "B"]
@@ -108,6 +111,7 @@ def estimate_properties(lattice: Lattice) -> Dict[str, float]:
     return result
 
 
+# Determines the crystalline quality of the lattice based on pattern repetition.
 def classify_phase(lattice: Lattice) -> str:
     """Classify the crystal phase based on structural regularity.
 
@@ -120,7 +124,7 @@ def classify_phase(lattice: Lattice) -> str:
     grid = lattice.get_grid()
     size = lattice.size
 
-    # Check for repeating 2x2 sub-patterns
+    # Check for repeating 2x2 sub-patterns to detect long-range order.
     pattern_counts: Dict[str, int] = {}
     for r in range(size - 1):
         for c in range(size - 1):
@@ -146,7 +150,7 @@ def classify_phase(lattice: Lattice) -> str:
     if len(top_patterns) >= 2 and top_patterns[1] / total_blocks > 0.15:
         return "polycrystalline"
 
-    # Row/column periodicity check
+    # Row/column periodicity check for 1D symmetry.
     row_repeats = 0
     for r in range(size):
         occupied = [grid[r][c] for c in range(size) if grid[r][c] != EMPTY]
@@ -167,6 +171,7 @@ def classify_phase(lattice: Lattice) -> str:
     return "amorphous"
 
 
+# Calculates structural integrity based on bond density and mirror symmetry.
 def compute_structural_stability(lattice: Lattice) -> float:
     """Compute structural stability score (0.0 to 1.0).
     
@@ -177,7 +182,7 @@ def compute_structural_stability(lattice: Lattice) -> float:
     if n_atoms == 0:
         return 0.0
 
-    # Coordination-based stability
+    # Coordination-based stability: rewards well-connected atoms.
     coordination_energy = 0.0
     for r in range(lattice.size):
         for c in range(lattice.size):
@@ -196,7 +201,7 @@ def compute_structural_stability(lattice: Lattice) -> float:
     stability_norm = min(max(coordination_energy / n_atoms, -1.0), 1.0)
     stability_norm = (stability_norm + 1.0) / 2.0  # normalize to 0-1
 
-    # Point-group Symmetry (Mirror Planes)
+    # Point-group Symmetry (Mirror Planes) check.
     grid = lattice.get_grid()
     size = lattice.size
     h_mirrors = 0
@@ -219,6 +224,7 @@ def compute_structural_stability(lattice: Lattice) -> float:
     return round(min(0.65 * stability_norm + 0.35 * symmetry_factor, 1.0), 4)
 
 
+# Measures the positional entropy of the atomic arrangement.
 def compute_lattice_order(lattice: Lattice) -> float:
     """Compute lattice structural order (0.0 to 1.0).
     
@@ -232,7 +238,7 @@ def compute_lattice_order(lattice: Lattice) -> float:
     size = lattice.size
     grid = lattice.get_grid()
 
-    # Bragg-like Order: count atoms aligned with periodic lattice sites
+    # Bragg-like Order: rewards alignment with periodic lattice sites.
     order_metric = 0
     for r in range(size):
         for c in range(size):
@@ -244,7 +250,7 @@ def compute_lattice_order(lattice: Lattice) -> float:
 
     order_factor = order_metric / n_atoms if n_atoms > 0 else 0.0
 
-    # Quadrant Distribution Entropy
+    # Quadrant Distribution Entropy: measures how evenly atoms are distributed.
     half = size // 2
     quads = [0, 0, 0, 0]
     for r in range(size):

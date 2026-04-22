@@ -1,16 +1,19 @@
 """Constants and configuration for the MaterialForge environment."""
 
+# Simulation grid dimensions and default episode constraints.
 GRID_SIZE = 8
 MAX_STEPS = 50
 COST_BUDGET_DEFAULT = 80
 EMPTY = "."
+
+# Completion requirements: minimal structure size and required crystal quality.
 MIN_ATOMS_FOR_COMPLETION = 6
 VALID_COMPLETION_PHASES = {"crystalline", "polycrystalline"}
 
+# The four macro-physical properties the agent is tasked to engineer.
 PROPERTY_NAMES = ["hardness", "conductivity", "thermal_resistance", "elasticity"]
 
-# Atom definitions: symbol -> (category, cost, property contributions)
-# Property contributions are base weights for [hardness, conductivity, thermal_resistance, elasticity]
+# Atom definitions: defines species symbols, their resource costs, and physical contributions.
 ATOM_TYPES = {
     "A": {
         "name": "metal",
@@ -56,7 +59,7 @@ ATOM_TYPES = {
 
 ATOM_SYMBOLS = list(ATOM_TYPES.keys())
 
-# Difficulty presets: tolerance is max acceptable deviation per property
+# Difficulty presets: adjusts matching tolerance and budget for different hackathon scenarios.
 DIFFICULTY_PRESETS = {
     "easy": {"tolerance": 20, "cost_budget": 120, "max_steps": 64},
     "medium": {"tolerance": 10, "cost_budget": 80, "max_steps": 50},

@@ -29,7 +29,7 @@ except ImportError:
 
 from openai import OpenAI
 
-# Dynamic imports to support both local development and standard package layout
+# Dynamic imports to support both local development and standard package layout.
 try:
     from client import MaterialForgeEnv
     from models import MaterialForgeAction
@@ -47,7 +47,7 @@ except ImportError:
     from material_forge_env.environment.lattice import Lattice
     from material_forge_env.environment.physics import classify_phase, estimate_properties
 
-# Global Configuration
+# Global Configuration for LiteLLM/OpenAI and Environment endpoints.
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN")
@@ -55,14 +55,14 @@ IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "material-forge-env:latest")
 SPACE_URL = os.getenv("SPACE_URL")
 BENCHMARK_ID = "material_forge_env"
 
-# Task Definitions
+# Standardized Task Definitions for the Hackathon evaluation.
 TASKS = [
     {"name": "basic-synthesis", "difficulty": "easy", "seed": 101},
     {"name": "diamond-like", "difficulty": "medium", "seed": 42},
     {"name": "superconductor-analogue", "difficulty": "hard", "seed": 999},
 ]
 
-# Hyperparameters
+# Hyperparameters for the heuristic and LLM reasoning steps.
 TEMPERATURE = 0.1
 MAX_TOKENS = 160
 SUCCESS_THRESHOLD = 0.3
@@ -71,7 +71,7 @@ SCORE_EPSILON = 0.10
 REWARD_MIN = 0.10
 REWARD_MAX = 0.90
 
-# Material Property logic
+# Material Property logic for translating goals to atomic species.
 PROPERTY_TO_SYMBOL = {
     "hardness": "A",
     "conductivity": "B",
@@ -98,6 +98,7 @@ class EvaluatedAction:
     resulting_phase: str
 
 
+# Standardized logging functions for OpenEnv leaderboard compatibility.
 def log_start(task: str, env: str, model: str) -> None:
     """Standardized [START] output."""
     print(f"[START] task={task} env={env} model={model}", flush=True)
@@ -121,6 +122,7 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     )
 
 
+# System prompt defining the "Scientific Assistant" persona for the LLM.
 SYSTEM_PROMPT = """You are an expert Material Scientist assistant.
 Your goal is to design a crystal lattice that matches the target physical properties.
 
@@ -185,6 +187,7 @@ def format_action_display(action: MaterialForgeAction) -> str:
     return f"{action.action_type}({action.row},{action.col})"
 
 
+# Local simulation: predicts the outcome of an action before committing it to the server.
 def simulate_action(grid: List[List[str]], action: MaterialForgeAction) -> Optional[List[List[str]]]:
     """Simulates a move on a local grid copy. Returns None if invalid."""
     new_grid = [row[:] for row in grid]
@@ -205,12 +208,13 @@ def simulate_action(grid: List[List[str]], action: MaterialForgeAction) -> Optio
     return new_grid
 
 
+# Scoring function for empty cells: encourages clustering and central placement.
 def score_empty_cell(grid: List[List[str]], row: int, col: int, symbol: str) -> float:
     """Calculates a heuristic score for placing an atom at a specific coordinate."""
     size = len(grid)
     center = (size - 1) / 2.0
     
-    # Neighborhood metrics
+    # Neighborhood metrics: rewards same-type clustering for stability.
     same_count = 0
     occ_count = 0
     for dr in (-1, 0, 1):
@@ -230,29 +234,30 @@ def score_empty_cell(grid: List[List[str]], row: int, col: int, symbol: str) -> 
     return same_count * 3.0 + occ_count * 1.2 - center_dist * 0.1 - edge_penalty
 
 
+# Lookahead Evaluator: performs a deep evaluation of candidate actions using local physics.
 def evaluate_candidate(obs, action: MaterialForgeAction) -> Optional[EvaluatedAction]:
     """Performs deep evaluation of a candidate action via local physics simulation."""
     next_grid = simulate_action(obs.grid, action)
     if next_grid is None:
         return None
 
-    # Run physics engine simulation
+    # Run local physics engine simulation to estimate properties.
     simulated_lattice = Lattice.from_grid(next_grid)
     props = estimate_properties(simulated_lattice)
     gaps = calculate_property_gaps(obs.target, props)
     cost = simulated_lattice.total_cost()
     phase = classify_phase(simulated_lattice)
     
-    # Heuristic Components
+    # Heuristic Components for ranking and selection.
     gap_score = calculate_mean_abs_gap(gaps)
     overshoot = sum(max(-g, 0.0) for g in gaps.values()) / 100.0
     budget_usage = max(cost - obs.cost_budget, 0.0) / max(obs.cost_budget, 1.0)
     
-    # Penalties and Bonuses
+    # Penalties and Bonuses for non-optimal structures.
     phase_bonus = 0.03 if phase == "crystalline" else 0.01 if phase == "polycrystalline" else 0.0
     overbudget_penalty = 0.12 if budget_usage > 0 else 0.0
     
-    # Composite Score (lower is better for gap score, so we use -score)
+    # Composite Score (lower is better for gap score).
     composite_heuristic = (
         -gap_score 
         - 1.5 * budget_usage 
@@ -276,12 +281,13 @@ def evaluate_candidate(obs, action: MaterialForgeAction) -> Optional[EvaluatedAc
     )
 
 
+# Candidate Pool Generator: creates a prioritized list of actions for the LLM to choose from.
 def build_action_pool(obs, trajectory: List[str], state_memory: Dict[str, int]) -> List[EvaluatedAction]:
     """Generates a filtered pool of candidate actions for the current state."""
     gaps = calculate_property_gaps(obs.target, obs.current_properties)
     remaining_budget = obs.cost_budget - obs.total_cost
     
-    # Analyze deficits
+    # Deficit analysis: identifies which properties need the most improvement.
     needed_props = sorted([p for p in PROPERTY_NAMES if gaps[p] > 0], key=lambda p: gaps[p], reverse=True)
     target_atoms = [PROPERTY_TO_SYMBOL[p] for p in needed_props[:3]] or list(ATOM_SYMBOLS)
     
@@ -299,7 +305,7 @@ def build_action_pool(obs, trajectory: List[str], state_memory: Dict[str, int]) 
             candidates.append(evaled)
             seen_keys.add(key)
 
-    # Strategy: Place relevant atoms in high-quality spots
+    # Strategy: Place relevant atoms in high-quality spots based on physics scoring.
     for symbol in target_atoms:
         empty_coords = []
         for r in range(8):
@@ -314,7 +320,7 @@ def build_action_pool(obs, trajectory: List[str], state_memory: Dict[str, int]) 
             if ATOM_TYPES[symbol]["cost"] <= remaining_budget + 4:
                 add_to_pool(MaterialForgeAction(action_type="place", row=r, col=c, atom=symbol))
 
-    # Strategy: Optimize existing structures via replacement
+    # Strategy: Optimize existing structures via replacement.
     if obs.total_cost > obs.cost_budget * 0.6:
         for r in range(8):
             for c in range(8):
@@ -323,7 +329,7 @@ def build_action_pool(obs, trajectory: List[str], state_memory: Dict[str, int]) 
                         if s != obs.grid[r][c]:
                             add_to_pool(MaterialForgeAction(action_type="replace", row=r, col=c, atom=s))
 
-    # Fallback to remove if severely over budget
+    # Fallback to remove if severely over budget.
     if obs.total_cost > obs.cost_budget * 1.05:
          for r in range(8):
             for c in range(8):
@@ -335,12 +341,13 @@ def build_action_pool(obs, trajectory: List[str], state_memory: Dict[str, int]) 
     return candidates[:8]
 
 
+# Decision Logic: consults the LLM to make the final optimal action selection.
 async def select_action(client: OpenAI, obs, pool: List[EvaluatedAction]) -> MaterialForgeAction:
     """Consults the LLM to choose the best action from the evaluated pool."""
     if not pool:
         return MaterialForgeAction(action_type="remove", row=0, col=0)
 
-    # Build prompt context
+    # Prompt construction with target goals and candidate summaries.
     gaps = calculate_property_gaps(obs.target, obs.current_properties)
     obs_text = textwrap.dedent(f"""\
         Step: {obs.step_number}/{obs.max_steps} | Budget: {obs.total_cost:.0f}/{obs.cost_budget:.0f}
@@ -390,6 +397,7 @@ def normalize_reward(raw_reward: float) -> float:
     return min(max(raw_reward, REWARD_MIN), REWARD_MAX)
 
 
+# Episode Runner: executes a single benchmark task from reset to completion.
 async def run_episode(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> float:
     """Executes a single benchmark episode."""
     log_start(task=task["name"], env=BENCHMARK_ID, model=MODEL_NAME)
@@ -433,7 +441,7 @@ async def run_episode(env: MaterialForgeEnv, client: OpenAI, task: Dict) -> floa
     return final_score
 
 
-
+# Environment server starter for automated evaluation pipelines.
 def start_environment_server(port: int = 7860):
     import urllib.request
     import urllib.error
@@ -469,6 +477,7 @@ def start_environment_server(port: int = 7860):
     return None
 
 
+# Main entry point: initializes clients and runs all evaluation tasks.
 async def main():
     """Main benchmark entry point."""
     parser = argparse.ArgumentParser(description="MaterialForge Inference Script")
@@ -558,4 +567,3 @@ if __name__ == "__main__":
         print(f"[FATAL] Unhandled exception: {e}", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
         sys.exit(0)
-

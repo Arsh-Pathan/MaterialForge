@@ -1,8 +1,5 @@
-"""MaterialForge Environment Implementation.
-
-An RL environment where an agent designs atomic crystal structures on an 8x8
-lattice to match target material properties.
-"""
+# MaterialForge Environment Implementation.
+# This class acts as the OpenEnv-compliant wrapper for our scientific simulation.
 
 import random
 from uuid import uuid4
@@ -27,6 +24,7 @@ from environment.physics import (
 from scenarios.scenarios import generate_scenario
 
 
+# Main environment class: bridges the abstract OpenEnv protocol with our lattice physics.
 class MaterialForgeEnvironment(Environment):
     """RL environment for designing crystal structures on a lattice grid.
 
@@ -49,6 +47,7 @@ class MaterialForgeEnvironment(Environment):
         self._max_steps = 50
         self._difficulty = "medium"
 
+    # Reset function: triggers a new scenario and initializes the physics lattice.
     def reset(self, seed: int | None = None, **kwargs) -> MaterialForgeObservation:
         """Reset environment with a new scenario.
 
@@ -74,6 +73,7 @@ class MaterialForgeEnvironment(Environment):
 
         return self._build_observation(done=False, reward=0.0)
 
+    # Core execution step: applies the agent's action and computes the resulting physics state.
     def step(self, action: MaterialForgeAction) -> MaterialForgeObservation:  # type: ignore[override]
         """Execute one step: apply action, compute properties, score, check done."""
         self._state.step_count += 1
@@ -123,6 +123,7 @@ class MaterialForgeEnvironment(Environment):
 
         return obs
 
+    # Internal helper to mutate the lattice state.
     def _apply_action(self, action: MaterialForgeAction) -> bool:
         """Apply the action to the lattice. Returns True if action was valid."""
         if action.action_type == "place":
@@ -137,6 +138,7 @@ class MaterialForgeEnvironment(Environment):
             return self._lattice.remove(action.row, action.col)
         return False
 
+    # Evaluation function: checks if the material has reached a stable crystalline phase.
     def _check_done(self, properties: dict, phase: str) -> bool:
         """Check if episode should end based on target matching and structural validity."""
         if self._state.step_count >= self._max_steps:
@@ -156,6 +158,7 @@ class MaterialForgeEnvironment(Environment):
 
         return False
 
+    # State serialization: packages the current grid and metrics into a standardized object.
     def _build_observation(self, done: bool, reward: float) -> MaterialForgeObservation:
         """Build an observation from the current lattice state."""
         properties = estimate_properties(self._lattice)

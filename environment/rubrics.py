@@ -1,4 +1,5 @@
-"""Reward rubric for the MaterialForge environment."""
+# Reward rubric for the MaterialForge environment.
+# Defines the multi-objective reward signal for training the AI agent.
 
 from openenv.core.rubrics import Rubric
 
@@ -8,6 +9,7 @@ except ImportError:
     from config import PROPERTY_NAMES
 
 
+# Holistic reward calculator: balances property matching with structural stability.
 class HeuristicRewardRubric(Rubric):
     """Heuristic reward based on property matching, structural stability, and order.
 
@@ -18,6 +20,7 @@ class HeuristicRewardRubric(Rubric):
         - 10% Phase Bonus (Crystalline regularity)
     """
 
+    # Computes a single scalar reward [0, 1] for every action taken by the agent.
     def forward(self, action, observation) -> float:
         """Compute holistic reward from observation metrics."""
         target = observation.target
@@ -26,7 +29,7 @@ class HeuristicRewardRubric(Rubric):
         total_cost = observation.total_cost
         cost_budget = observation.cost_budget
 
-        # 1. Property Match (50%): Geometric mean of relative property accuracy
+        # 1. Property Match (50%): Measures how close the current lattice is to the goal.
         mismatches = []
         for prop in PROPERTY_NAMES:
             t = target.get(prop, 0.0)
@@ -37,12 +40,12 @@ class HeuristicRewardRubric(Rubric):
         avg_mismatch = sum(mismatches) / len(mismatches)
         property_match_score = max(1.0 - avg_mismatch, 0.0)
 
-        # 2. Physics Metrics from Score Breakdown
+        # 2. Physics Metrics: Rewards structural integrity (Gibbs stability and order).
         breakdown = observation.score_breakdown
         stability = breakdown.get("structural_stability", 0.0)
         lattice_order = breakdown.get("lattice_order_index", 0.0)
 
-        # 3. Phase Regularity Bonus
+        # 3. Phase Regularity Bonus: Large incentive to reach the "crystalline" state.
         if phase == "crystalline":
             phase_bonus = 1.0
         elif phase == "polycrystalline":
@@ -50,14 +53,14 @@ class HeuristicRewardRubric(Rubric):
         else:
             phase_bonus = 0.0
 
-        # 4. Economic Penalty
+        # 4. Economic Penalty: Strongly discourages exceeding the atom cost budget.
         if cost_budget > 0 and total_cost > cost_budget:
             # Quadratic penalty for budget overruns to encourage efficiency
             cost_penalty = ((total_cost - cost_budget) / cost_budget) ** 2
         else:
             cost_penalty = 0.0
 
-        # Composite Reward Calculation
+        # Composite Reward Calculation: Final weighted sum returned to the agent.
         reward = (
             0.50 * property_match_score
             + 0.25 * stability

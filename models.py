@@ -11,6 +11,7 @@ except ImportError:
     from environment.config import GRID_SIZE
 
 
+# Standardized Action schema: Defines how the agent interacts with the 8x8 lattice.
 class MaterialForgeAction(Action):
     """Action to manipulate atoms on the crystal lattice."""
 
@@ -25,6 +26,7 @@ class MaterialForgeAction(Action):
     )
 
 
+# Standardized Observation schema: Packages the physical state and goals for the agent.
 class MaterialForgeObservation(Observation):
     """Observation from the MaterialForge environment after each step."""
 

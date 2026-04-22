@@ -9,7 +9,7 @@ except ImportError:
     from environment.config import DIFFICULTY_PRESETS, PROPERTY_NAMES
 
 
-# Predefined named scenarios with characteristic target profiles
+# Defined named tasks representing specific material science goals.
 NAMED_SCENARIOS: Dict[str, Dict[str, float]] = {
     "diamond-like": {
         "hardness": 90.0,
@@ -43,7 +43,7 @@ NAMED_SCENARIOS: Dict[str, Dict[str, float]] = {
     },
 }
 
-# Plausible property ranges per difficulty
+# Plausible property ranges per difficulty: scales target complexity.
 _RANGES = {
     "easy": (25.0, 75.0),
     "medium": (15.0, 85.0),
@@ -51,6 +51,7 @@ _RANGES = {
 }
 
 
+# Primary logic for creating a new task episode: defines the "What" for the agent.
 def generate_scenario(difficulty: str = "medium", name: str | None = None) -> Dict:
     """Generate a scenario with target properties and constraints.
 
@@ -63,6 +64,7 @@ def generate_scenario(difficulty: str = "medium", name: str | None = None) -> Di
     """
     preset = DIFFICULTY_PRESETS.get(difficulty, DIFFICULTY_PRESETS["medium"])
 
+    # Retrieves a fixed scientific profile or generates a random target vector.
     if name and name in NAMED_SCENARIOS:
         target = dict(NAMED_SCENARIOS[name])
     else:
@@ -80,11 +82,12 @@ def generate_scenario(difficulty: str = "medium", name: str | None = None) -> Di
     }
 
 
+# Randomized selector for benchmarking the agent across various task complexities.
 def get_random_scenario() -> Dict:
     """Pick a random difficulty and optionally a named scenario."""
     difficulty = random.choice(["easy", "medium", "hard"])
 
-    # 30% chance of using a named scenario
+    # 30% chance of using a named scenario for specific scientific testing.
     if random.random() < 0.3:
         name = random.choice(list(NAMED_SCENARIOS.keys()))
         return generate_scenario(difficulty=difficulty, name=name)
