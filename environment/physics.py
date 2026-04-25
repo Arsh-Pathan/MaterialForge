@@ -175,31 +175,38 @@ def classify_phase(lattice: Lattice) -> str:
 def compute_structural_stability(lattice: Lattice) -> float:
     """Compute structural stability score (0.0 to 1.0).
     
-    Analyses the Gibbs-like stability of the lattice configuration by
-    penalizing dangling bonds and rewarding high coordinate numbers.
+    Analyses the Gibbs-like stability of the lattice configuration.
+    This logic specifically penalizes 1D 'linear' chains and rewards 2D clusters.
     """
     n_atoms = lattice.atom_count()
     if n_atoms == 0:
         return 0.0
 
-    # Coordination-based stability: rewards well-connected atoms.
+    # Coordination-based stability: Non-linear rewards for high neighbor density.
+    # Penalizes dangling bonds (1 neighbor) and isolated atoms (0 neighbors).
     coordination_energy = 0.0
     for r in range(lattice.size):
         for c in range(lattice.size):
             if lattice.get(r, c) == EMPTY:
                 continue
             neighbors = lattice.get_neighbors(r, c)
-            coordination_number = sum(1 for n in neighbors if n != EMPTY)
+            cn = sum(1 for n in neighbors if n != EMPTY)
             
-            if coordination_number == 0:
-                coordination_energy -= 1.5  # High penalty for isolated atoms (unstable)
-            elif coordination_number >= 4:
-                coordination_energy += 1.2  # Bonus for high-coordination (solid packing)
+            if cn == 0:
+                coordination_energy -= 1.5  # Isolated atom
+            elif cn == 1:
+                coordination_energy -= 0.5  # Dangling bond (end of a line)
+            elif cn == 2:
+                coordination_energy += 0.3  # Simple line (low stability)
+            elif cn == 3:
+                coordination_energy += 1.0  # Cluster edge (good stability)
             else:
-                coordination_energy += 0.4 * coordination_number
+                coordination_energy += 1.6  # Crystal core (excellent stability)
 
+    # Normalize based on atom count and clamp to [0, 1].
+    # A perfectly packed 3x3 square would have high cn, maximizing this score.
     stability_norm = min(max(coordination_energy / n_atoms, -1.0), 1.0)
-    stability_norm = (stability_norm + 1.0) / 2.0  # normalize to 0-1
+    stability_norm = (stability_norm + 1.0) / 2.0
 
     # Point-group Symmetry (Mirror Planes) check.
     grid = lattice.get_grid()

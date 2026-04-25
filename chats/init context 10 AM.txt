@@ -1,0 +1,685 @@
+╭─── Claude Code v2.1.112 ─────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting        │
+│                    Welcome back!                   │ started                 │
+│                                                    │ Run /init to create a … │
+│                       ▐▛███▜▌                      │ ─────────────────────── │
+│                      ▝▜█████▛▘                     │ Recent activity         │
+│                        ▘▘ ▝▝                       │ 2d ago  /init           │
+│                                                    │ /resume for more        │
+│           Sonnet 4.6 · API Usage Billing           │                         │
+│ ~\Projects\Hackathon\Meta PyTorch OpenEnv Hackath… │                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+  ↑ Install the PyCharm plugin from the JetBrains Marketplace: https://docs.claude.com/s/claude-code-jetbrains
+  ⎿  SessionStart:startup hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+
+❯ Read full codebase and make sure you don't make any changes to the code just  
+  read the code base.                                                           
+  ⎿  UserPromptSubmit hook error                                   ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1:
+
+● I'll explore the full codebase structure and read all the files.
+
+  Searched for 2 patterns (ctrl+o to expand)
+
+● Now I'll read all the source files. Let me start with the top-level files and
+  work through each directory.
+
+  Read 8 files (ctrl+o to expand)
+
+● Now reading all the Python source files.
+
+  Read 4 files (ctrl+o to expand)
+
+● Now reading the environment package files.
+
+  Read 5 files (ctrl+o to expand)
+
+● Now reading the scenarios, server, and test files.
+
+  Read 6 files (ctrl+o to expand)
+
+● Now reading the test files, scripts, and frontend assets.
+
+  Read 5 files (ctrl+o to expand)
+
+● Now reading the frontend static assets.
+
+  Read 5 files (ctrl+o to expand)
+
+● Now reading the CSS files and remaining static assets.
+
+  Read 5 files (ctrl+o to expand)
+
+● Finally, reading the egg-info metadata files.
+
+  Read 5 files (ctrl+o to expand)
+
+● I've read the entire codebase. Here's a complete summary:
+
+  ---
+  MaterialForge - Full Codebase Summary
+
+  Project: A reinforcement learning environment for autonomous crystalline
+  structure discovery, built for the Meta PyTorch OpenEnv Hackathon. Agents
+  place atoms (Metal/A, Conductor/B, Ceramic/C, Polymer/P) on an 8x8 lattice to
+  match target physical properties (Hardness, Conductivity, Thermal Resistance,
+  Elasticity).
+
+  Architecture
+
+  MaterialForge/
+  ├── environment/          # Core physics engine
+  │   ├── config.py         # Constants: grid size (8), atom types, costs,
+  difficulty presets
+  │   ├── lattice.py        # Lattice class: 8x8 grid with place/replace/remove
+  operations
+  │   ├── physics.py        # Property estimation, phase classification,
+  stability/order scoring
+  │   └── rubrics.py        # HeuristicRewardRubric: 50% property match, 25%
+  stability, 15% order, 10% phase
+  ├── server/               # FastAPI server (OpenEnv-compliant)
+  │   ├── app.py            # Entry point: creates FastAPI app, mounts static
+  files, /playground route
+  │   ├── material_forge_env_environment.py  # MaterialForgeEnvironment:
+  reset/step logic, done detection
+  │   └── static/           # "Discovery Lab" dashboard (HTML/CSS/JS with
+  Chart.js)
+  ├── scenarios/
+  │   └── scenarios.py      # 5 named scenarios (diamond-like, conductor,
+  heat-shield, flexible-polymer, balanced-alloy)
+  ├── models.py             # Pydantic models: MaterialForgeAction,
+  MaterialForgeObservation
+  ├── client.py             # WebSocket client (EnvClient subclass)
+  ├── inference.py          # Agent: heuristic lookahead + LLM
+  (OpenAI-compatible) for action selection
+  ├── tests/
+  │   └── benchmark.py      # Analytical benchmark suite (100-trial evaluations,
+   Ollama support)
+  ├── openenv.yaml          # 3 tasks: basic-synthesis, diamond-like,
+  superconductor-analogue
+  ├── Dockerfile            # Multi-stage Docker build for HF Spaces deployment
+  └── pyproject.toml        # Python 3.10+, depends on openenv-core, openai,
+  gradio
+
+  Key Components
+
+  - Physics engine (physics.py): Calculates properties from atom fractions +
+  neighbor bonding + BFS percolation (for conductivity). Classifies phase via
+  2x2 pattern repetition analysis. Computes structural stability (coordination
+  energy + mirror symmetry) and lattice order (Bragg-like + quadrant
+  homogeneity).
+  - Inference agent (inference.py): Generates candidate actions via heuristic
+  scoring (clustering, center placement), simulates each locally via the physics
+   engine, then asks an LLM to pick the best from top-8 candidates. Falls back
+  to pure heuristic if LLM fails.
+  - Frontend dashboard: Dark-themed professional UI with real-time lattice
+  canvas, property alignment bars, reward convergence chart, KPIs, and analytics
+   tab. WebSocket-connected to the server.
+  - 3 difficulty levels: Easy (tolerance 20, budget 120), Medium (tolerance 10,
+  budget 80), Hard (tolerance 5, budget 60).
+
+  No code changes were made.
+
+● Ran 1 stop hook (ctrl+o to expand)
+  ⎿  Stop hook error: Failed with non-blocking status code:
+  /usr/bin/bash: line 1: C:Program: command not found
+
+✻ Worked for 7m 27s
+
+❯ We have already qualified Round 1 and are now in the Grand Finale. Our        
+  environment is largely complete and functional. The remaining work likely     
+  involves training, final packaging, and required submissions.                 
+                                                                                
+  Your task is to determine EXACTLY what actions are required next.             
+                                                                                
+  You must carefully analyze the following resources:                           
+                                                                                
+  VIDEO                                                                         
+  https://youtu.be/Jew4lhAiqnw?si=BzcMT5UkCfjtwvp-                              
+                                                                                
+  DOCUMENTS                                                                     
+  https://docs.google.com/document/d/1ysOVuq6StZpJ7mcyNi4bpmxxB1AnAWE9YGlEu8M9Z 
+  GU/edit?tab=t.0                                                               
+  https://docs.google.com/document/d/1Odznuzwtb1ecDOm2t6ToZd4MuMXXfO6vWUGcxbC6m 
+  Fs/preview?pru=AAABnebPvLA*TA1iaP5LykX7FUN4W27LdQ&tab=t.0#heading=h.b0qzylowp 
+  ixh                                                                           
+  https://docs.google.com/document/d/1m4EEBkomp3UJ4Wc-ydRjITDfdzLWPyFqNx11ERvgg 
+  PM/edit?tab=t.0                                                               
+  https://docs.google.com/document/d/1lGOb5w8LGSbYd7_L-L-zAD9moThrMQZpUyIb0wDj2 
+  o4/edit?tab=t.0#heading=h.iksn3i4lpwnt                                        
+  https://docs.google.com/document/d/1Odznuzwtb1ecDOm2t6ToZd4MuMXXfO6vWUGcxbC6m 
+  Fs/edit?usp=drivesdk                                                          
+                                                                                
+  Instructions:                                                                 
+                                                                                
+  1. Read every document completely.                                            
+  2. Visit every link referenced inside those documents.                        
+  3. Extract all instructions, requirements, deadlines, and submission steps    
+  related to the FINAL ROUND.                                                   
+  4. Watch the entire video and extract any guidance or rules mentioned by the  
+  organizers.                                                                   
+  5. Identify any required artifacts or deliverables (examples: environment     
+  repo, training results, evaluation scripts, demos, presentations, etc.).      
+                                                                                
+  After reviewing everything, produce the following structured output:          
+                                                                                
+  SECTION 1 — Final Round Requirements                                          
+  List all explicit requirements given by the organizers.                       
+                                                                                
+  SECTION 2 — Required Deliverables                                             
+  List everything the team must submit or demonstrate.                          
+                                                                                
+  SECTION 3 — Training Requirements                                             
+  Identify:                                                                     
+  - whether RL training is expected                                             
+  - recommended algorithms or tooling                                           
+  - expected evaluation metrics or benchmarks                                   
+                                                                                
+  SECTION 4 — Submission Process                                                
+  Explain:                                                                      
+  - where submissions happen                                                    
+  - what files or links are needed                                              
+  - any format requirements.                                                    
+                                                                                
+  SECTION 5 — Judging Criteria                                                  
+  Extract how projects will be evaluated.                                       
+                                                                                
+  SECTION 6 — Immediate Action Plan                                             
+  Create a prioritized checklist of the next steps our team should take to      
+  maximize our chances of winning.                                              
+                                                                                
+  Focus on actionable insights only. Do not summarize the documents broadly.    
+  Extract only the information relevant to what we must do next. Dont make any  
+  code changes yet                                                              
+  ⎿  UserPromptSubmit hook error                                   ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1:
+
+● I'll fetch all the documents and video to extract the finale requirements.
+  Starting with all resources in parallel.
+
+● Fetch(https://youtu.be/Jew4lhAiqnw?si=BzcMT5UkCfjtwvp-)
+  ⎿  Error: Request failed with status code 303
+
+● Fetch(https://docs.google.com/document/d/1ysOVuq6StZpJ7mcyNi4bpmxxB1AnAWE9YGlE
+       u8M9ZGU/edit?tab=t.0)
+  ⎿  Received 574.3KB (200 OK)
+
+● Fetch(https://docs.google.com/document/d/1Odznuzwtb1ecDOm2t6ToZd4MuMXXfO6vWUGc
+       xbC6mFs/preview?pru=AAABnebPvLA*TA1iaP5LykX7FUN4W27LdQ&tab=t.0#heading=h.
+       b0qzylowpixh)
+  ⎿  Received 282KB (200 OK)
+
+● Fetch(https://docs.google.com/document/d/1m4EEBkomp3UJ4Wc-ydRjITDfdzLWPyFqNx11
+       ERvggPM/edit?tab=t.0)
+  ⎿  Received 198.3KB (200 OK)
+
+● Fetch(https://docs.google.com/document/d/1lGOb5w8LGSbYd7_L-L-zAD9moThrMQZpUyIb
+       0wDj2o4/edit?tab=t.0#heading=h.iksn3i4lpwnt)  ⎿  Received 519.4KB (200 OK)
+
+● Fetch(https://docs.google.com/document/d/1Odznuzwtb1ecDOm2t6ToZd4MuMXXfO6vWUGc
+       xbC6mFs/edit?usp=drivesdk)
+  ⎿  Received 358.2KB (200 OK)
+  ⎿  PostToolUseFailure:WebFetch hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+
+● The Google Docs are behind authentication and the YouTube video redirected.
+  Let me try alternative approaches to access these resources.
+
+● Fetch(https://docs.google.com/document/d/1ysOVuq6StZpJ7mcyNi4bpmxxB1AnAWE9YGlE
+       u8M9ZGU/export?format=txt)
+  ⎿  Received 820 bytes (307 Temporary Redirect)
+
+● Fetch(https://docs.google.com/document/d/1Odznuzwtb1ecDOm2t6ToZd4MuMXXfO6vWUGc
+       xbC6mFs/export?format=txt)
+  ⎿  Received 820 bytes (307 Temporary Redirect)
+
+● Fetch(https://docs.google.com/document/d/1m4EEBkomp3UJ4Wc-ydRjITDfdzLWPyFqNx11
+       ERvggPM/export?format=txt)
+  ⎿  Received 820 bytes (307 Temporary Redirect)
+
+● Fetch(https://docs.google.com/document/d/1lGOb5w8LGSbYd7_L-L-zAD9moThrMQZpUyIb
+       0wDj2o4/export?format=txt)
+  ⎿  Received 820 bytes (307 Temporary Redirect)
+
+● Fetch(https://www.youtube.com/watch?v=Jew4lhAiqnw)
+  ⎿  Received 1.1MB (200 OK)
+
+● Following the redirects to get the actual document content.
+
+● Fetch(https://doc-08-8o-docstext.googleusercontent.com/export/e6hpso97lrhpva19
+       l3uocm525o/mesgsm24tv6fcjskeodkl8v654/1777090195000/110811587972687932588
+       /*/1ysOVuq6StZpJ7mcyNi4bpmxxB1AnAWE9YGlEu8M9ZGU?format=txt)
+  ⎿  Error: Request failed with status code 400
+
+● Fetch(https://doc-14-bs-docstext.googleusercontent.com/export/e6hpso97lrhpva19
+       l3uocm525o/udraaum8cqmoegp5o6gm5f37rs/1777090195000/107073175634533162618
+       /*/1Odznuzwtb1ecDOm2t6ToZd4MuMXXfO6vWUGcxbC6mFs?format=txt)
+  ⎿  Error: Request failed with status code 400
+
+● Fetch(https://doc-0k-40-docstext.googleusercontent.com/export/e6hpso97lrhpva19
+       l3uocm525o/igqp5g3rqgl01k2sbhph5jasd8/1777090195000/104102298771320400411
+       /*/1m4EEBkomp3UJ4Wc-ydRjITDfdzLWPyFqNx11ERvggPM?format=txt)
+  ⎿  Error: Request failed with status code 400
+
+● Fetch(https://doc-0k-bs-docstext.googleusercontent.com/export/e6hpso97lrhpva19
+       l3uocm525o/50ntp2srn6mv6e0t942chcuo4s/1777090200000/107073175634533162618
+       /*/1lGOb5w8LGSbYd7_L-L-zAD9moThrMQZpUyIb0wDj2o4?format=txt)
+  ⎿  Error: Request failed with status code 400
+  ⎿  PostToolUseFailure:WebFetch hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+  ⎿  PostToolUseFailure:WebFetch hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+  ⎿  PostToolUseFailure:WebFetch hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+  ⎿  PostToolUseFailure:WebFetch hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+
+● The redirects failed due to the wildcard in the URL. Let me try the
+  published/public versions and also search for the hackathon details online.
+
+● Fetch(https://docs.google.com/document/d/1ysOVuq6StZpJ7mcyNi4bpmxxB1AnAWE9YGlE
+       u8M9ZGU/pub)
+  ⎿  Error: Request failed with status code 401
+
+● Fetch(https://docs.google.com/document/d/1Odznuzwtb1ecDOm2t6ToZd4MuMXXfO6vWUGc
+       xbC6mFs/pub)
+  ⎿  Error: Request failed with status code 401
+
+● Fetch(https://docs.google.com/document/d/1m4EEBkomp3UJ4Wc-ydRjITDfdzLWPyFqNx11
+       ERvggPM/pub)
+  ⎿  Error: Request failed with status code 401
+  ⎿  PostToolUseFailure:WebFetch hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+
+● Fetch(https://docs.google.com/document/d/1lGOb5w8LGSbYd7_L-L-zAD9moThrMQZpUyIb
+       0wDj2o4/pub)
+  ⎿  Error: Request failed with status code 401
+  ⎿  PostToolUseFailure:WebFetch hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+  ⎿  PostToolUseFailure:WebFetch hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+● Web Search("Meta PyTorch OpenEnv Hackathon 2026 Scaler finale judging criteria
+             submission requirements")
+  ⎿  Did 10 searches in 8s
+  ⎿  PostToolUseFailure:WebFetch hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+
+● Fetch(https://dev.to/alara_iris_5d51447594b8a3/meta-pytorch-openenv-hackathon-
+       x-sst-10nd)
+  ⎿  Received 72.1KB (200 OK)
+
+● Fetch(https://www.scaler.com/school-of-technology/meta-pytorch-hackathon)
+  ⎿  Received 8.5KB (200 OK)
+
+● Fetch(https://kalinga.ai/openenv-ai-hackathon-india-2026/)
+  ⎿  Received 193KB (200 OK)
+
+● Web Search("OpenEnv hackathon round 2 finale requirements training GRPO
+            submission themes judging 2026")
+  ⎿  Did 10 searches in 7s
+
+● Fetch(https://github.com/meta-pytorch/OpenEnv)
+  ⎿  Received 434.6KB (200 OK)
+
+● Web Search(""openenv" hackathon themes "world modeling" "long horizon" judging
+             criteria scoring environment 2026")
+  ⎿  Did 8 searches in 10s
+
+● Web Search("OpenEnv hackathon "round 2" OR "finale" training pipeline GRPO
+            unsloth TRL submission requirements environment")
+  ⎿  Did 6 searches in 11s
+
+● Fetch(https://pytorch.org/event/openenv-ai-hackathon/)
+  ⎿  Received 160.2KB (200 OK)
+
+● Fetch(https://huggingface.co/docs/trl/openenv)
+  ⎿  Received 27.2KB (200 OK)
+
+● Fetch(https://deepwiki.com/meta-pytorch/OpenEnv/12-examples-and-tutorials)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ If you are unable to read via url I'll provide you the raw text               
+  ⎿  UserPromptSubmit hook error                                       ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: 
+
+● Yes, please paste the raw text from the documents. I've gathered significant
+  context from public sources (Scaler, PyTorch.org, TRL docs, GitHub), but the
+  Google Docs are behind authentication and contain the critical finale-specific
+   details I need — especially the Themes & Judging Criteria document and the
+  Participant Help Guide.
+
+  Please paste the content from these documents:
+
+  1. Hackathon FAQs (1ysO...)
+  2. Themes & Judging Criteria (1Odz...)
+  3. OpenEnv Hackathon Resources (1m4E...)
+  4. Participant Help Guide (1lGO...)
+
+  Also, if you can share the key points from the YouTube video (Mega Lecture
+  91), that would fill the remaining gaps. I'll compile the full action plan
+  once I have the raw text.
+
+● Ran 1 stop hook (ctrl+o to expand)
+  ⎿  Stop hook error: Failed with non-blocking status code:
+  /usr/bin/bash: line 1: C:Program: command not found
+
+❯ I have added everything in @docs\                                             
+  ⎿  Listed directory docs\
+  ⎿  UserPromptSubmit hook error                                       ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: 
+
+● The documents are in the repo. Let me read all of them now.
+
+  Read 6 files (ctrl+o to expand)
+  ⎿  PostToolUseFailure:Read hook error                                ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: 
+  ⎿  PostToolUseFailure:Read hook error                                ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: 
+  ⎿  PostToolUseFailure:Read hook error                                ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: 
+  ⎿  PostToolUseFailure:Read hook error                                ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: 
+
+● The Themes & Judging Criteria doc and the FAQ are large. Let me read them in
+  parts.
+
+  Searched for 1 pattern, read 2 files, listed 1 directory (ctrl+o to expand)  ⎿  PostToolUseFailure:Read hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+  ⎿  PostToolUseFailure:Read hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+  ⎿  PostToolUseFailure:Read hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+  ⎿  PostToolUseFailure:Read hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+  ⎿  PostToolUseFailure:Bash hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+  ⎿  PostToolUseFailure:Bash hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+
+● Now reading the FAQ and the transcript (key sections).
+
+  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+  ⎿  PostToolUseFailure:Read hook error  ⎿  Failed with non-blocking status code: /usr/bin/bash: line 1: C:Program: command not found
+
+● Now let me read the key portions of the transcript for hackathon-specific
+  guidance.
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● I now have all the critical information. Let me also verify the Themes
+  document is fully captured since I read it via bash.
+
+  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● I now have all the information needed. Here is the complete analysis:
+
+  ---
+  SECTION 1 — Final Round Requirements
+
+  Explicit organizer requirements:
+
+  1. Use OpenEnv (latest release) — build on top of the framework, don't
+  reinvent the wheel
+  2. A working training script using Unsloth or HF TRL, ideally as a Colab 
+  notebook so judges can re-run it
+  3. Evidence of actual training — at minimum, loss and reward plots from a real
+   run
+  4. A short writeup: mini-blog on HuggingFace OR < 2 minute video on YouTube,
+  OR a short slide deck
+  5. Environment hosted on Hugging Face Spaces — discoverable and runnable;
+  judges will pull the environment from the submitted URL
+  6. A README that motivates the problem, explains the environment, and shows
+  results — with links to HF Space, blog/video, and all supplementary materials
+  7. One submission per team — pick your best idea
+  8. No large video files in the HF Hub submission — use URL references instead
+  9. No changes/commits after the submission deadline — judges evaluate the
+  snapshot at deadline
+  10. It is NOT mandatory to keep the same problem statement as Round 1 — only
+  keep it if it aligns with the finale themes
+  11. Compute credits for HuggingFace will be given onsite on April 25-26 for
+  post-training
+
+  ---
+  SECTION 2 — Required Deliverables
+
+  #: 1
+  Deliverable: OpenEnv-compliant environment
+  Format: HF Space (live URL)
+  Status for MaterialForge: Partially done — deployed at
+    ArshPathan/material_forge_env but needs verification with latest OpenEnv
+  ────────────────────────────────────────
+  #: 2
+  Deliverable: Training script
+  Format: Colab notebook (Unsloth or TRL + GRPO)
+  Status for MaterialForge: NOT DONE — critical gap
+  ────────────────────────────────────────
+  #: 3
+  Deliverable: Training evidence
+  Format: Reward curves, loss plots, before/after comparison (.png/.jpg in repo
+  +
+    README)
+  Status for MaterialForge: NOT DONE — critical gap
+  ────────────────────────────────────────
+  #: 4
+  Deliverable: Mini-blog OR <2min video OR slide deck
+  Format: HF blog post / YouTube / Slides
+  Status for MaterialForge: NOT DONE
+  ────────────────────────────────────────
+  #: 5
+  Deliverable: README with results
+  Format: Markdown in repo root
+  Status for MaterialForge: Exists but needs major update with training results,
+
+    plots, and links
+  ────────────────────────────────────────
+  #: 6
+  Deliverable: openenv.yaml manifest
+  Format: YAML in repo root
+  Status for MaterialForge: Done
+  ────────────────────────────────────────
+  #: 7
+  Deliverable: Valid client/server separation
+  Format: Code architecture
+  Status for MaterialForge: Done
+  ────────────────────────────────────────
+  #: 8
+  Deliverable: 3-minute live pitch
+  Format: In-person presentation
+  Status for MaterialForge: NOT PREPARED
+
+  ---
+  SECTION 3 — Training Requirements
+
+  Is RL training expected?
+
+  YES — absolutely mandatory. The documents are explicit:
+
+  ▎ "The bar isn't 'training script exists.' The bar is 'training script runs 
+  ▎ against the environment, the agent learns, and you can show it.'"
+
+  Training evidence is worth 20% of the score directly, and the training
+  pipeline is another 10%.
+
+  Recommended stack:
+
+  - TRL (GRPOTrainer) — the primary training framework
+  - Unsloth — for memory efficiency (QLoRA/LoRA), especially on limited hardware
+  - GRPO algorithm — preferred over PPO for LLM RL; more memory-efficient, no
+  value model needed
+  - OpenEnv environment_factory pattern — wraps your environment as tool methods
+   the trainer discovers automatically
+
+  How training should work (from TRL docs):
+
+  1. Create an environment class with reset() and tool methods (e.g.,
+  place_atom(), remove_atom())
+  2. The GRPOTrainer discovers tool methods, generates completions, parses tool
+  calls, executes them, feeds results back
+  3. Reward comes from the environment after each episode
+  4. Model: Start with a capable instruct model (e.g., Qwen/Qwen3-0.6B or
+  Qwen/Qwen2.5-3B)
+
+  Expected evaluation metrics:
+
+  - Reward curves over training steps (must be plotted, labeled, saved as
+  images)
+  - Before/after behavior comparison (untrained baseline vs. trained agent)
+  - Loss plots
+  - Quantitative comparison: random agent vs. heuristic baseline vs. trained LLM
+   agent
+
+  Key warnings from organizers:
+
+  - Don't naively upcast 4-bit to 16-bit when saving LoRA — use proper merge
+  path
+  - Start with easy tasks, use curriculum learning
+  - Binary rewards (1.0 success / 0.0 fail) often work better than shaped
+  rewards for GRPO
+  - max_completion_length must be increased for long episodes (default is too
+  small)
+  - Test reward function before training — if a capable model can't beat random,
+   reward is broken
+
+  ---
+  SECTION 4 — Submission Process
+
+  Where submissions happen:
+
+  - HuggingFace Spaces — the environment must be live and accessible via URL
+  - Judges pull the environment from the submitted URL to evaluate it
+  - All supplementary materials (blog, video, slides, plots) must be linked from
+   the README
+
+  What files/links are needed:
+
+  1. HF Space URL of the running environment
+  2. Colab notebook with training script (linked from README)
+  3. Plot images (.png/.jpg) committed to the repo and embedded in README
+  4. Blog/video/slides link in README
+  5. openenv.yaml manifest in repo root
+  6. README.md with: problem motivation, how env works, results, and all links
+
+  Format requirements:
+
+  - Plots: labeled axes, .png or .jpg, embedded in README with one-line captions
+  - Video: < 2 minutes
+  - No large binary files in HF Hub
+  - README readable in 3-5 minutes
+
+  ---
+  SECTION 5 — Judging Criteria
+
+  Criterion: Environment Innovation
+  Weight: 40%
+  What judges evaluate: Is it novel, creative, genuinely challenging? Does it
+    teach an LLM something it can't currently do well? Underexplored domain?
+    Fresh angle? (Judges have seen too many chess/snake/grid-world clones)
+  ────────────────────────────────────────
+  Criterion: Storytelling & Presentation
+  Weight: 30%
+  What judges evaluate: Clear explanation of problem, environment, and what the
+    agent learned. Engaging demo, easy to follow for non-technical audience.
+    README answers: Problem → Environment → Results → Why it matters
+  ────────────────────────────────────────
+  Criterion: Showing Improvement in Rewards
+  Weight: 20%
+  What judges evaluate: Observable training progress: reward curves,
+  before/after
+    behavior, baseline comparison. Proves the agent actually learned something
+  ────────────────────────────────────────
+  Criterion: Reward & Training Pipeline
+  Weight: 10%
+  What judges evaluate: Coherent reward logic, pipeline produces meaningful
+    improvement in agent behavior
+
+  What makes a submission stand out:
+
+  - Ambitious, original problem — "Does this environment exist to teach an LLM
+  something it currently can't do well?"
+  - Rich reward signal — not just 0/1, uses OpenEnv's Rubric system, hard to
+  game
+  - Real end-to-end training — not just "script exists" but "script runs, agent
+  learns, you can show it"
+  - Readable plots on same axes for comparison
+  - A story, not an API doc — problem gap → environment → results → why it
+  matters
+
+  MaterialForge's theme alignment:
+
+  MaterialForge fits Theme #3.1 (World Modeling — Professional Tasks) and Theme 
+  #2 (Long-Horizon Planning). The scientific workflow (inverse molecular design)
+   is a genuinely novel domain for LLM RL training — this is a strong
+  differentiator.
+
+  ---
+  SECTION 6 — Immediate Action Plan
+
+  CRITICAL PATH (must-do, in priority order):
+
+  - 1. Build the TRL/GRPO Training Script (HIGHEST PRIORITY)
+    - Create a Colab notebook that uses GRPOTrainer with environment_factory
+    - Wrap MaterialForge as a TRL-compatible environment class with tool methods
+   (place_atom, remove_atom, replace_atom) instead of a generic step()
+    - Use Unsloth for memory efficiency
+    - Start model: Qwen/Qwen3-0.6B or Qwen/Qwen2.5-3B
+    - Connect to the MaterialForge HF Space via WebSocket
+    - This unlocks 30% of the score (20% improvement evidence + 10% pipeline)
+  - 2. Run Training & Capture Evidence
+    - Execute training with at least enough steps for curves to be meaningful
+    - Save reward curves and loss plots as .png with labeled axes
+    - Record baseline comparison: random agent score vs. heuristic vs. trained
+  LLM
+    - Use the onsite HF compute credits (April 25-26) for larger runs
+    - Before/after qualitative examples (grid screenshots showing trained agent
+  building better crystals)
+  - 3. Update README with Results
+    - Restructure to tell the story: Problem → Environment → Results → Why It
+  Matters
+    - Embed training plots with one-line captions
+    - Add links to: HF Space, Colab training notebook, video/blog
+    - Show baseline vs. trained comparison table
+    - Make it readable in 3-5 minutes
+  - 4. Create Mini-Blog or <2min Video
+    - Option A: HuggingFace blog post explaining the environment and training
+  results
+    - Option B: YouTube video (<2 min) showing the Discovery Lab dashboard +
+  training progress
+    - Option C: Short slide deck for the pitch
+    - Link it from README
+  - 5. Verify HF Space is Live & Current
+    - Ensure ArshPathan/material_forge_env is running and accessible
+    - Test that judges can hit /reset and /step endpoints
+    - Verify openenv.yaml is valid with latest OpenEnv release
+  - 6. Prepare 3-Minute Pitch
+    - Structure: Problem (inverse molecular design) → Environment (what agent
+  sees/does) → Demo (show dashboard) → Training Results (reward curves,
+  before/after) → Why it matters (scientific discovery)
+    - Practice delivering in 3 minutes
+    - Emphasize the novelty: scientific professional workflow, not another game
+  clone
+
+  NICE-TO-HAVE (if time permits):
+
+  - Add curriculum learning (easy → medium → hard scenarios during training)
+  - Multiple reward function ablations to show robustness
+  - Anti-reward-hacking analysis
+  - WandB integration for richer training logs
+
+  Time allocation suggestion (for the 48-hour finale):
+
+  ┌───────────┬───────┬─────────────────────────────────────────────────────┐
+  │   Phase   │ Hours │                      Activity                       │
+  ├───────────┼───────┼─────────────────────────────────────────────────────┤
+  │ Hours 0-4 │ 4h    │ Build TRL training script + environment wrapper in  │
+  │           │       │ Colab                                               │
+  ├───────────┼───────┼─────────────────────────────────────────────────────┤
+  │ Hours 4-8 │ 4h    │ Debug training loop, get first reward curves        │
+  ├───────────┼───────┼─────────────────────────────────────────────────────┤
+  │ Hours     │ 8h    │ Run training with onsite compute credits, iterate   │
+  │ 8-16      │       │ on rewards                                          │
+  ├───────────┼───────┼─────────────────────────────────────────────────────┤
+  │ Hours     │ 8h    │ Capture all evidence, generate plots, run baseline  │
+  │ 16-24     │       │ comparisons                                         │
+  ├───────────┼───────┼─────────────────────────────────────────────────────┤
+  │ Hours     │ 8h    │ Update README, write blog/create video, clean up    │
+  │ 24-32     │       │ repo                                                │
+  ├───────────┼───────┼─────────────────────────────────────────────────────┤
+  │ Hours     │ 8h    │ Polish demo, prepare pitch, verify HF Space         │
+  │ 32-40     │       │                                                     │
+  ├───────────┼───────┼─────────────────────────────────────────────────────┤
+  │ Hours     │ 8h    │ Final submission prep, rehearse pitch, buffer for   │
+  │ 40-48     │       │ issues                                              │
+  └───────────┴───────┴─────────────────────────────────────────────────────┘
+
+● User answered Claude's questions:
+  ⎿  · [Bonsai] What went well or could be improved on this task? Consider 
+     correctness, performance, and code quality. → Awsome performance
+
+● User answered Claude's questions:
+  ⎿  · [Bonsai] How did the model do on this task? → Great
+
+● Thank you for the feedback!
+
+● Ran 1 stop hook (ctrl+o to expand)
+  ⎿  Stop hook error: Failed with non-blocking status code:
+  /usr/bin/bash: line 1: C:Program: command not found
+
+✻ Cogitated for 4m 42s

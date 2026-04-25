@@ -12,4 +12,5 @@ outputs/
 scratch/
 RESEARCH.md
 SUMMARY.md
-docs/*.txt
+chats
+docs

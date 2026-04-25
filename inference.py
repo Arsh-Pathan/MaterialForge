@@ -124,12 +124,17 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 
 # System prompt defining the "Scientific Assistant" persona for the LLM.
 SYSTEM_PROMPT = """You are an expert Material Scientist assistant.
-Your goal is to design a crystal lattice that matches the target physical properties.
+Your goal is to design a crystalline lattice that matches target physical properties.
+
+Core Strategy:
+1. Avoid simple lines (horizontal, vertical, or diagonal). They are structurally unstable.
+2. Build compact 2D clusters (2x2 or 3x3 blocks) to maximize structural stability.
+3. Start placement from the lattice center (rows/cols 3-4) and expand outward.
+4. Group same-type atoms together to boost property contributions.
 
 Instructions:
-1. Analyze the provided candidate actions and their heuristic scores.
-2. Select the "candidate_id" that best helps bridge the remaining property gaps.
-3. Prioritize stability (crystalline phase) and cost-efficiency.
+1. Analyze the candidate actions and their heuristic scores.
+2. Select the "candidate_id" that helps bridge property gaps while maintaining a compact 2D shape.
 
 Return ONLY a JSON object: {"candidate_id": <int>}"""
 
