@@ -11,3 +11,5 @@ outputs/
 .pytest_cache/
 scratch/
 RESEARCH.md
+SUMMARY.md
+docs/*.txt
