@@ -14,34 +14,35 @@ VALID_COMPLETION_PHASES = {"crystalline", "polycrystalline"}
 PROPERTY_NAMES = ["hardness", "conductivity", "thermal_resistance", "elasticity"]
 
 # Atom definitions: defines species symbols, their resource costs, and physical contributions.
+# Each species is a SPECIALIST in one physical property to force chemical diversity.
 ATOM_TYPES = {
     "A": {
         "name": "metal",
         "cost": 8,
         "contributions": {
-            "hardness": 1.00,
-            "conductivity": 0.45,
-            "thermal_resistance": 0.35,
-            "elasticity": 0.10,
+            "hardness": 1.00,           # Master of Hardness
+            "conductivity": 0.15,
+            "thermal_resistance": 0.10,
+            "elasticity": 0.05,
         },
     },
     "B": {
         "name": "conductor",
         "cost": 6,
         "contributions": {
-            "hardness": 0.20,
-            "conductivity": 1.00,
-            "thermal_resistance": 0.15,
-            "elasticity": 0.30,
+            "hardness": 0.10,
+            "conductivity": 1.00,       # Master of Conductivity
+            "thermal_resistance": 0.10,
+            "elasticity": 0.20,
         },
     },
     "C": {
         "name": "ceramic",
         "cost": 4,
         "contributions": {
-            "hardness": 0.65,
+            "hardness": 0.30,
             "conductivity": 0.05,
-            "thermal_resistance": 1.00,
+            "thermal_resistance": 1.00, # Master of Thermal Resistance
             "elasticity": 0.05,
         },
     },
@@ -49,10 +50,10 @@ ATOM_TYPES = {
         "name": "polymer",
         "cost": 2,
         "contributions": {
-            "hardness": 0.10,
-            "conductivity": 0.10,
-            "thermal_resistance": 0.20,
-            "elasticity": 1.00,
+            "hardness": 0.05,
+            "conductivity": 0.15,
+            "thermal_resistance": 0.15,
+            "elasticity": 1.00,         # Master of Elasticity
         },
     },
 }
