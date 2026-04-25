@@ -96,7 +96,7 @@ class MaterialForgeTRLEnv:
             col = max(0, min(int(col), GRID_SIZE - 1))
         except (ValueError, TypeError):
             self._invalid_actions += 1
-            self.reward = self.compute_episode_reward()
+            self.reward = self._compute_episode_reward()
             return "ERROR: Coordinates must be integers 0-7."
 
         if atom is not None:
@@ -110,7 +110,7 @@ class MaterialForgeTRLEnv:
             cell = grid[row][col]
             if action_type == "place" and cell != ".":
                 self._invalid_actions += 1
-                self.reward = self.compute_episode_reward()
+                self.reward = self._compute_episode_reward()
                 return (
                     f"INVALID ACTION: ({row},{col}) is already occupied by '{cell}'. "
                     "Use replace_atom.\n" + self._format_observation(self._obs)
@@ -118,7 +118,7 @@ class MaterialForgeTRLEnv:
             
             if action_type == "remove" and cell == ".":
                 self._invalid_actions += 1
-                self.reward = self.compute_episode_reward()
+                self.reward = self._compute_episode_reward()
                 return (
                     f"INVALID ACTION: Cannot remove from empty cell ({row},{col}).\n"
                     + self._format_observation(self._obs)
@@ -126,7 +126,7 @@ class MaterialForgeTRLEnv:
             
             if action_type == "replace" and (cell == "." or cell == atom):
                 self._invalid_actions += 1
-                self.reward = self.compute_episode_reward()
+                self.reward = self._compute_episode_reward()
                 return (
                     f"INVALID ACTION: replace_atom at ({row},{col}) is redundant or invalid.\n"
                     + self._format_observation(self._obs)
@@ -143,7 +143,7 @@ class MaterialForgeTRLEnv:
             self._best_rows_used, self._best_cols_used = self._count_rows_and_cols(obs.grid)
             self._best_phase = obs.phase
 
-        self.reward = self.compute_episode_reward()
+        self.reward = self._compute_episode_reward()
         
         self.done = obs.done
         return self._format_observation(obs)
@@ -158,7 +158,7 @@ class MaterialForgeTRLEnv:
                     cols_used.add(c)
         return len(rows_used), len(cols_used)
 
-    def compute_episode_reward(self) -> float:
+    def _compute_episode_reward(self) -> float:
         total = max(self._total_actions, 1)
         invalid_ratio = self._invalid_actions / total
         invalid_penalty = 0.3 * invalid_ratio
@@ -194,4 +194,4 @@ class MaterialForgeTRLEnv:
 
 def reward_func(environments, **kwargs) -> list[float]:
     """Episode reward using the best-scoring state plus aligned shaping penalties."""
-    return [env.compute_episode_reward() for env in environments]
+    return [env._compute_episode_reward() for env in environments]
