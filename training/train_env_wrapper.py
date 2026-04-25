@@ -74,15 +74,41 @@ class MaterialForgeTRLEnv:
         return self._format_observation(obs)
 
     def place_atom(self, row: int, col: int, atom: str) -> str:
-        """Place an atom on an empty cell of the crystal lattice."""
+        """Place an atom on an empty cell of the crystal lattice.
+
+        Args:
+            row: Row index on the 8x8 grid (0-7)
+            col: Column index on the 8x8 grid (0-7)
+            atom: Atom species - 'A' (Metal, hardness, cost 8), 'B' (Conductor, conductivity, cost 6), 'C' (Ceramic, thermal resistance, cost 4), or 'P' (Polymer, elasticity, cost 2)
+
+        Returns:
+            Updated lattice state with current properties, target gaps, and phase.
+        """
         return self._do_step("place", row, col, atom)
 
     def remove_atom(self, row: int, col: int) -> str:
-        """Remove an atom from the crystal lattice."""
+        """Remove an atom from the crystal lattice to free up budget.
+
+        Args:
+            row: Row index on the 8x8 grid (0-7)
+            col: Column index on the 8x8 grid (0-7)
+
+        Returns:
+            Updated lattice state with current properties, target gaps, and phase.
+        """
         return self._do_step("remove", row, col, None)
 
     def replace_atom(self, row: int, col: int, atom: str) -> str:
-        """Replace an existing atom with a different species."""
+        """Replace an existing atom with a different species to adjust material properties.
+
+        Args:
+            row: Row index on the 8x8 grid (0-7)
+            col: Column index on the 8x8 grid (0-7)
+            atom: New atom species - 'A' (Metal), 'B' (Conductor), 'C' (Ceramic), or 'P' (Polymer)
+
+        Returns:
+            Updated lattice state with current properties, target gaps, and phase.
+        """
         return self._do_step("replace", row, col, atom)
 
     def _do_step(self, action_type: str, row: int, col: int, atom: Optional[str]) -> str:
