@@ -49,6 +49,9 @@ class MaterialForgeTRLEnv:
         self._best_reward = 0.0
         self._invalid_actions = 0
         self._total_actions = 0
+        self._best_phase = "amorphous"
+        self._best_rows_used = 0
+        self._best_cols_used = 0
 
     def reset(self, **kwargs) -> str:
         """Resets the environment with a curriculum-based difficulty."""
@@ -64,6 +67,9 @@ class MaterialForgeTRLEnv:
         self._best_reward = 0.0
         self._invalid_actions = 0
         self._total_actions = 0
+        self._best_phase = obs.phase
+        self._best_rows_used = 0
+        self._best_cols_used = 0
         
         return self._format_observation(obs)
 
@@ -90,6 +96,7 @@ class MaterialForgeTRLEnv:
             col = max(0, min(int(col), GRID_SIZE - 1))
         except (ValueError, TypeError):
             self._invalid_actions += 1
+            self.reward = self.compute_episode_reward()
             return "ERROR: Coordinates must be integers 0-7."
 
         if atom is not None:
@@ -103,29 +110,71 @@ class MaterialForgeTRLEnv:
             cell = grid[row][col]
             if action_type == "place" and cell != ".":
                 self._invalid_actions += 1
-                return f"INVALID ACTION: ({row},{col}) is already occupied by '{cell}'. Use replace_atom."
+                self.reward = self.compute_episode_reward()
+                return (
+                    f"INVALID ACTION: ({row},{col}) is already occupied by '{cell}'. "
+                    "Use replace_atom.\n" + self._format_observation(self._obs)
+                )
             
             if action_type == "remove" and cell == ".":
                 self._invalid_actions += 1
-                return f"INVALID ACTION: Cannot remove from empty cell ({row},{col})."
+                self.reward = self.compute_episode_reward()
+                return (
+                    f"INVALID ACTION: Cannot remove from empty cell ({row},{col}).\n"
+                    + self._format_observation(self._obs)
+                )
             
             if action_type == "replace" and (cell == "." or cell == atom):
                 self._invalid_actions += 1
-                return f"INVALID ACTION: replace_atom at ({row},{col}) is redundant or invalid."
+                self.reward = self.compute_episode_reward()
+                return (
+                    f"INVALID ACTION: replace_atom at ({row},{col}) is redundant or invalid.\n"
+                    + self._format_observation(self._obs)
+                )
 
         action = MaterialForgeAction(action_type=action_type, row=row, col=col, atom=atom)
         obs = self.env.step(action)
         self._obs = obs
         
-        # Track best reward and apply penalty for invalid attempts
+        # Cache the structure associated with the best reward so shaping stays coherent.
         step_reward = obs.reward if obs.reward is not None else 0.0
-        self._best_reward = max(self._best_reward, step_reward)
-        
-        penalty = 0.05 * self._invalid_actions
-        self.reward = max(self._best_reward - penalty, 0.0)
+        if step_reward >= self._best_reward:
+            self._best_reward = step_reward
+            self._best_rows_used, self._best_cols_used = self._count_rows_and_cols(obs.grid)
+            self._best_phase = obs.phase
+
+        self.reward = self.compute_episode_reward()
         
         self.done = obs.done
         return self._format_observation(obs)
+
+    def _count_rows_and_cols(self, grid: list[list[str]]) -> tuple[int, int]:
+        rows_used = set()
+        cols_used = set()
+        for r, row in enumerate(grid):
+            for c, cell in enumerate(row):
+                if cell != ".":
+                    rows_used.add(r)
+                    cols_used.add(c)
+        return len(rows_used), len(cols_used)
+
+    def compute_episode_reward(self) -> float:
+        total = max(self._total_actions, 1)
+        invalid_ratio = self._invalid_actions / total
+        invalid_penalty = 0.3 * invalid_ratio
+
+        row_spread = min(self._best_rows_used / 4.0, 1.0)
+        col_spread = min(self._best_cols_used / 4.0, 1.0)
+        spatial_bonus = 0.10 * (row_spread * col_spread)
+
+        phase_bonus = 0.0
+        if self._best_phase == "crystalline":
+            phase_bonus = 0.15
+        elif self._best_phase == "polycrystalline":
+            phase_bonus = 0.05
+
+        final = self._best_reward + spatial_bonus + phase_bonus - invalid_penalty
+        return max(min(final, 1.0), 0.0)
 
     def _format_observation(self, obs: MaterialForgeObservation) -> str:
         grid_lines = []
@@ -141,3 +190,8 @@ class MaterialForgeTRLEnv:
             f"Stability: {sb.get('structural_stability',0):.3f} | Order: {sb.get('lattice_order_index',0):.3f}\n"
             f"Grid:\n{chr(10).join(grid_lines)}"
         )
+
+
+def reward_func(environments, **kwargs) -> list[float]:
+    """Episode reward using the best-scoring state plus aligned shaping penalties."""
+    return [env.compute_episode_reward() for env in environments]
