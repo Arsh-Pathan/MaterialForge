@@ -25,9 +25,9 @@ This is not a toy grid task. The agent faces real tradeoffs: placing one atom ca
 | | |
 |---|---|
 | **Live Environment** | [huggingface.co/spaces/ArshPathan/material_forge_env](https://huggingface.co/spaces/ArshPathan/material_forge_env) |
-| **Interactive Dashboard** | [material_forge_env/playground](https://huggingface.co/spaces/ArshPathan/material_forge_env/playground) |
-| **Training Blog** | [BLOG.md](BLOG.md) |
-| **Training Notebook** | [training/MaterialForge_GRPO_Training.ipynb](training/MaterialForge_GRPO_Training.ipynb) |
+| **Interactive Dashboard** | [material_forge_env/playground](https://arshpathan-material-forge-env.hf.space/) |
+| **Training Blog** | [BLOG.md](https://huggingface.co/spaces/ArshPathan/material_forge_env/blob/main/BLOG.md) |
+| **Training Notebook** | [training/MaterialForge_GRPO_Training.ipynb](https://colab.research.google.com/drive/1HI_tcYdvh-H_6pu7PZMhHCz0ggje4lF3?usp=sharing) |
 
 ## The Problem
 
@@ -246,9 +246,9 @@ curl https://huggingface.co/spaces/ArshPathan/material_forge_env/health
 Recommended review order:
 
 1. **This README** — understand the environment and why it's interesting
-2. **[Live Dashboard](https://huggingface.co/spaces/ArshPathan/material_forge_env/playground)** — interact with the environment
-3. **[BLOG.md](BLOG.md)** — the training story, results, and lessons learned
-4. **[Training Notebook](training/MaterialForge_GRPO_Training.ipynb)** — the full GRPO pipeline
+2. **[Live Dashboard](https://huggingface.co/spaces/ArshPathan/material_forge_env)** — interact with the environment
+3. **[BLOG.md](https://huggingface.co/spaces/ArshPathan/material_forge_env/blob/main/BLOG.md)** — the training story, results, and lessons learned
+4. **[Training Notebook](https://colab.research.google.com/drive/1HI_tcYdvh-H_6pu7PZMhHCz0ggje4lF3?usp=sharing)** — the full GRPO pipeline
 5. **`training/runs/Run - V/`** — reward curves, loss curves, baseline comparison
 
 The `openenv.yaml` manifest defines three graded scenarios (basic synthesis, diamond-like, superconductor analogue) with pass/good/excellent thresholds and baseline performance numbers.
