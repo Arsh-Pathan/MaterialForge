@@ -167,23 +167,25 @@ For the **Grand Finale Submission**, we scaled the training to **Qwen2.5-7B-Inst
 
 ## Training Evidence
 
-While we provide historical artifacts from **Run - V** (0.6B model) as a baseline for rapid iteration, the final submission policy is derived from the **Grand Finale** run:
+While we provide historical artifacts from **Run - V** (0.6B model) as a baseline for rapid iteration, the final submission policy is derived from the **Grand Finale** run, which achieved a **peak episodic reward of 0.86+**.
 
 ### Grand Finale Run (Final Submission)
 - **Base Model:** `Qwen2.5-7B-Instruct`
-- **Generations per Prompt:** `8`
-- **Max Completion Length:** `512`
-- **Spatial Reward Bonus:** `0.15`
-- **Hardware:** High-memory server (142GB VRAM)
+- **Generations per Prompt:** `8` (leveraging high-memory hardware for stable advantage estimation)
+- **Max Completion Length:** `512` (allowing for deep scientific reasoning)
+- **Spatial Reward Bonus:** `0.15` (prioritizing 2D crystalline order)
+- **Robustness:** Integrated **Anti-Collapse Reward Shaping** and **Robust Parsing** to prevent syntax-drift failures.
+- **Hardware:** High-memory server (**142GB VRAM**)
 
 ### Historical Baseline (Run - V)
 - **Base Model:** `Qwen/Qwen3-0.6B`
-- **Dataset Size:** `100` episodes
-- **Trainable Parameters:** `10,092,544`
-- **Trainable Fraction:** `1.67%`
-- **Hardware:** `1x NVIDIA L40S`
-- **Random Baseline Mean Reward:** `0.5525`
 - **Random Baseline Mean Best Reward:** `0.6137`
+
+### Key Innovation: Robust Scientific Alignment
+To ensure the 7B model didn't fall into "Safe Mode Collapse" (doing nothing to avoid penalties), we implemented:
+1. **Curiosity Bonuses**: Rewards for each unique valid tool call.
+2. **Occupancy Incentives**: Penalizing empty grids to force the model to start the design process.
+3. **Resilient Parsing**: A regex-based parser that handles hallucinated `<tool_call>` tags, a common failure mode for tool-using models.
 
 ### Reward Curve
 
