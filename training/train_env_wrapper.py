@@ -185,10 +185,23 @@ class MaterialForgeTRLEnv:
         return len(rows_used), len(cols_used)
 
     def _compute_episode_reward(self) -> float:
-        total = max(self._total_actions, 1)
-        invalid_ratio = self._invalid_actions / total
-        invalid_penalty = 0.3 * invalid_ratio
+        # Base property matching
+        total_reward = self._best_reward
 
+        # --- Anti-Collapse & Exploration Bonuses ---
+        # Reward for actually interacting with the environment (Curiosity)
+        # We give a bonus for each valid action, up to a limit
+        action_bonus = min(self._total_actions * 0.02, 0.15)
+        
+        # Grid Usage Bonus (prevents doing nothing)
+        # If the grid is empty, give a small negative penalty
+        structure_bonus = 0.0
+        if self._best_rows_used > 0:
+            structure_bonus = 0.10
+        else:
+            structure_bonus = -0.10
+
+        # --- Spatial & Phase Bonuses (Scientific Quality) ---
         row_spread = min(self._best_rows_used / 4.0, 1.0)
         col_spread = min(self._best_cols_used / 4.0, 1.0)
         spatial_bonus = 0.15 * (row_spread * col_spread)
@@ -199,7 +212,13 @@ class MaterialForgeTRLEnv:
         elif self._best_phase == "polycrystalline":
             phase_bonus = 0.10
 
-        final = self._best_reward + spatial_bonus + phase_bonus - invalid_penalty
+        # --- Penalties ---
+        # Invalid action penalty
+        total = max(self._total_actions, 1)
+        invalid_ratio = self._invalid_actions / total
+        invalid_penalty = 0.2 * invalid_ratio # Softened to prevent fear-based collapse
+
+        final = total_reward + action_bonus + structure_bonus + spatial_bonus + phase_bonus - invalid_penalty
         return max(min(final, 1.0), 0.0)
 
     def _format_observation(self, obs: MaterialForgeObservation) -> str:

@@ -9,11 +9,3 @@ build/
 outputs/
 .env
 .pytest_cache/
-scratch/
-RESEARCH.md
-SUMMARY.md
-gemini.md
-research.md
-training/runs/
-chats
-docs
