@@ -1,188 +1,154 @@
-# MaterialForge: Training an RL Agent for Crystal Design with OpenEnv, TRL, and Unsloth
+# MaterialForge: Teaching an LLM to Design Crystals Through Reinforcement Learning
 
-## Why We Built MaterialForge
+## The Question
 
-Large language models are usually evaluated on static prompts, but many real scientific problems are interactive. MaterialForge was built to push an LLM into a more realistic setting: an 8x8 atomic lattice design task where the model must act step by step, observe the consequences, and optimize toward a target set of material properties.
+Can you train a language model to solve a scientific design problem — not by memorizing answers, but by interacting with a simulation, observing consequences, and getting better over time?
 
-The core question behind the project is simple:
+That is what MaterialForge set out to test.
 
-Can we train an LLM to become better at **inverse material design** inside a verifiable environment?
+The task: an 8x8 atomic lattice. Four atom types with different costs and physical contributions. A target set of material properties — hardness, conductivity, thermal resistance, elasticity. The agent places, removes, and replaces atoms one at a time, watching how each action changes the estimated properties, the structural phase, and the remaining budget.
 
-Instead of generating a single answer, the model must build a crystalline structure over multiple actions while balancing:
+There is no shortcut. The agent cannot look up the answer. It has to build the crystal through sequential reasoning, and the environment tells it — through a dense, multi-component reward signal — whether the structure is getting better or worse.
 
-- hardness
-- conductivity
-- thermal resistance
-- elasticity
-- structural stability
-- lattice order
-- budget efficiency
+## Why This Is Not Another Grid Game
 
-This makes MaterialForge a strong fit for OpenEnv and RL post-training.
+The environment captures ideas from real materials science, even though the simulation is simplified:
 
-## The Environment
+**Properties are coupled and nonlinear.** Metal atoms (A) are the primary contributor to hardness, but they cost 4x more than Polymers (P). A design that needs both high hardness and high elasticity forces the agent to mix expensive metals with cheap polymers — and the bonding physics means their arrangement matters, not just their count.
 
-MaterialForge is an OpenEnv-compatible reinforcement learning environment focused on crystal synthesis.
+**Conductivity has a percolation threshold.** If the agent creates a continuous top-to-bottom path of Conductor atoms (B), the grid gets a 15-point conductivity bonus — simulating long-range electron transport. But building that path costs at least 48 budget (8 B atoms at 6 each). The agent must decide whether the percolation bonus is worth the budget investment for a given target.
 
-At every episode, the agent sees:
+**Structure scores independently from composition.** Two grids with identical atom counts can have very different rewards. The physics engine evaluates coordination number (how many neighbors each atom has), mirror symmetry, quadrant distribution, and 2x2 sub-pattern repetition. A compact rectangular cluster of atoms scores much higher than the same atoms scattered randomly.
 
-- the current 8x8 lattice
-- target material properties
-- current estimated properties
-- total cost vs budget
-- lattice phase and structural metrics
+**Phase transitions are emergent.** The lattice is classified as amorphous, polycrystalline, or crystalline based on structural regularity. Reaching crystalline — worth a 10% reward bonus — requires the agent to discover that repeating patterns and high density create order. This is something the agent must learn, not something it is told.
 
-The agent can take three actions:
+**Voids help elasticity.** In a counterintuitive twist inspired by real polymer science, some empty space actually improves the elasticity estimate. The agent must resist the temptation to fill every cell.
 
-- `place_atom(row, col, atom)`
-- `remove_atom(row, col)`
-- `replace_atom(row, col, atom)`
+## The Reward Signal
 
-The reward combines several scientific signals:
+The environment reward is deliberately multi-objective:
 
-- property matching
-- structural stability
-- lattice order
-- phase bonus
-- cost sensitivity
+| Component | Weight | Purpose |
+|---|---|---|
+| Property Matching | 50% | Distance between current and target properties |
+| Structural Stability | 25% | Coordination energy — rewards 2D clusters, penalizes isolated atoms |
+| Lattice Order | 15% | Positional entropy and quadrant distribution |
+| Phase Bonus | 10% | Crystalline or polycrystalline phase achieved |
+| Cost Penalty | subtractive | Quadratic penalty for exceeding the atom budget |
 
-This means the environment is not rewarding random atom placement. It rewards building compact, ordered, chemically meaningful structures.
+This decomposition is intentional. A single-objective reward (property matching alone) would let the agent ignore structure entirely and scatter atoms randomly until properties align by luck. The multi-component design forces the agent to satisfy several constraints simultaneously — matching properties, building ordered structures, staying efficient. That is closer to how real materials design works.
 
-## The Grand Finale: Scaling to 7B and 142GB VRAM
+## Training Approach
 
-For the hackathon's final submission, we transitioned from rapid iteration on 0.6B models to a high-fidelity "Grand Finale" run using **Qwen2.5-7B-Instruct**. achieved a **peak episodic reward of 0.86+**, representing a massive leap in both scientific accuracy and structural order.
+We used GRPO (Group Relative Policy Optimization) from Hugging Face TRL, combined with Unsloth for efficient 4-bit QLoRA fine-tuning of a Qwen3-0.6B model.
 
-### Why Scaling Mattered
-The smaller 0.6B models were useful for testing the environment, but they often struggled with the long-horizon logic required for crystalline formation. The **Qwen2.5-7B-Instruct** model, however, demonstrated a superior ability to follow the "Scientific Strategy" in our system prompt, utilizing cluster-based growth and real-time gap analysis.
+The key architectural decision was the **TRL environment wrapper**. TRL's `GRPOTrainer` with `environment_factory` runs a multi-turn tool-calling loop: the model generates a tool call, the wrapper executes it against the environment, and the observation feeds back. The wrapper exposes three named tools — `place_atom`, `remove_atom`, `replace_atom` — that internally call the OpenEnv environment's standard `step()` method.
 
-### Optimized Training Setup
-Leveraging a high-performance server with **142GB VRAM**, we optimized the final GRPO run:
+### What Made Training Work
 
-- **Base Model:** `Qwen2.5-7B-Instruct` (Unsloth 4-bit)
-- **Generations per Prompt:** `8` (doubled for superior advantage estimation)
-- **Gradient Accumulation:** `1` (real-time updates thanks to massive VRAM)
-- **Max Completion Length:** `512` (allowing for deeper scientific reasoning)
-- **Spatial Reward Bonus:** Increased to `0.15` to strongly prioritize 2D crystalline order.
+Getting from "the loop runs" to "the model actually improves" required solving several problems:
 
-### Overcoming "Safe-Mode Collapse"
-A critical discovery during the finale was the model's tendency to avoid actions to minimize penalties. We countered this with:
-- **Curiosity Rewards**: Incentivizing tool calls (+0.15) to maintain exploration.
-- **Robust Parsing**: A custom regex safety net that handles the model's occasional syntax drift (e.g., hallucinated closing tags).
+**Problem 1: Silent no-ops.** In early runs, the model would call `place_atom(0, 0, 'A')` repeatedly. The first call succeeded; every subsequent call silently failed because the cell was already occupied. The model saw the same observation over and over and never learned that its action was invalid.
 
-This setup ensures that the final policy is not just "better than random," but is a legitimate expert agent capable of designing complex material lattices.
+**Fix:** The wrapper pre-checks the grid state before calling `step()`. If the action is invalid (placing on an occupied cell, removing from an empty cell, replacing with the same atom), it returns an explicit error message. The episode reward includes an invalid action penalty proportional to the ratio of invalid to total actions.
 
-## What the Training Notebook Demonstrated
+**Problem 2: Reward stagnation.** With only the final-step reward, the model would converge to a low-effort strategy — fill one row with alternating atoms and stop. Reward stayed flat around 0.55–0.60.
 
-The GRPO notebook for Run - V successfully:
+**Fix:** The wrapper tracks the *best* step reward seen during the episode and uses that as the base for the episode reward. This means the model gets credit for reaching good intermediate states, even if later actions make things worse. On top of this, spatial diversity bonuses reward using multiple rows and columns (not just row 0), and phase bonuses incentivize reaching crystalline order.
 
-- validated the MaterialForge environment
-- wrapped the environment as callable tools for TRL
-- launched GRPO training on the crystal-design task
-- saved a trained adapter checkpoint
-- produced reward and loss curve artifacts
-- compared against a random baseline
+**Problem 3: The model converged on row 0.** Early training produced a strong local optimum: `A B C P A B C P` along row 0. This fills one row with all four species and reaches an okay reward through property balance, but the structure has terrible stability (all atoms in a 1D line) and no chance of crystalline phase.
 
-Artifacts from this run are available in:
+**Fix:** The system prompt was updated to instruct center-start placement (rows 3–4, columns 3–4) and 2D cluster growth. Spatial diversity bonuses make single-row strategies suboptimal. The combination of prompt guidance and reward shaping broke the local optimum.
 
-- `training/runs/Run - V/reward_curve.png`
-- `training/runs/Run - V/loss_curve.png`
-- `training/runs/Run - V/baseline_comparison.png`
+**Problem 4: Hard scenarios too early.** Giving the model hard targets (tight tolerance, low budget) from the start meant it rarely experienced success, producing near-zero advantages for GRPO.
+
+**Fix:** Curriculum learning. The first 30 episodes use easy difficulty (generous budget, wide tolerance), episodes 30–80 use medium, and the remaining episodes use hard. The model builds confidence on achievable targets before facing harder ones.
+
+### Training Configuration
+
+| Parameter | Value |
+|---|---|
+| Base model | Qwen/Qwen3-0.6B |
+| Trainable parameters | 10,092,544 (1.67%) |
+| Generations per prompt | 4 |
+| Max completion length | 2048 tokens |
+| Temperature | 1.0 |
+| Learning rate | 5e-5 |
+| Gradient accumulation | 4 |
+| Episodes | 100 |
+| Hardware | 1x NVIDIA L40S |
+
+## Results
 
 ### Reward Curve
 
-![Run V Reward Curve](blog_assets/run_v_reward_curve.png)
+![Reward Curve](blog_assets/reward_curve.png)
 
-This plot captures how the GRPO reward evolved across the training run and serves as the primary visual signal that the RL pipeline was active and producing measurable feedback.
+The reward climbs from ~0.58 at the start of training to a peak of **0.87** around step 91. The 5-step bucketed mean shows steady improvement with some expected variance from GRPO exploration.
 
 ### Loss Curve
 
-![Run V Loss Curve](blog_assets/run_v_loss_curve.png)
+![Loss Curve](blog_assets/loss_curve.png)
 
-The loss plot complements the reward curve by showing that the optimization loop was functioning end to end rather than just generating trajectories without updating the policy.
-
-## Baseline Results
-
-As a lightweight sanity check, the notebook also ran a random baseline across 20 episodes.
-
-Recorded random-baseline performance from Run - V:
-
-- mean reward: `0.5525`
-- mean best reward: `0.6137`
-
-These baseline numbers matter because they establish a floor for the environment. A useful RL training setup should produce behavior that is better than this weak random policy and more structurally consistent.
+The training loss confirms that the policy is being updated meaningfully. The loss is noisy (typical for RL) but trends downward, indicating the model is learning from the reward signal.
 
 ### Baseline Comparison
 
-![Run V Baseline Comparison](blog_assets/run_v_baseline_comparison.png)
+![Baseline Comparison](blog_assets/baseline_comparison.png)
 
-This comparison chart is useful for judges because it quickly communicates that the project is not only an environment demo; it also includes a measurable training-and-evaluation loop with saved evidence.
+A random baseline agent — which places atoms at random positions with random types — achieves a mean reward of **0.55** and a mean best reward of **0.61**. The trained agent exceeds both consistently, with its peak reward (0.87) representing a **42% improvement** over the random best.
 
-## Why This Project Is Interesting
+### What the Numbers Mean
 
-MaterialForge is not just another toy grid world.
+The reward is normalized to [0, 1], where 1.0 means perfect property matching, perfect structure, crystalline phase, and no budget overrun. In practice, scoring above 0.80 requires the agent to:
 
-What makes it interesting is that the model must learn tradeoffs that feel closer to scientific reasoning:
+- Match all four target properties within reasonable tolerance
+- Build a compact 2D cluster with high coordination numbers
+- Achieve crystalline or polycrystalline phase
+- Stay within budget
 
-- placing one atom can help one property while hurting another
-- compact 2D structure matters more than random coverage
-- conductivity and hardness are not optimized by the same action sequence
-- a high-reward state often depends on both local geometry and global organization
+The fact that a 0.6B parameter model reaches 0.87 after 100 training steps suggests that the environment reward is well-designed — learnable but not trivially exploitable.
 
-That gives us a meaningful long-horizon tool-using problem with verifiable rewards, which is exactly the kind of task RL environments are good at.
+## Five Training Runs, Not One
 
-## Key Lessons from the Training Runs
+The training archive contains five complete runs (Run I through Run V), each representing a different stage in the development process:
 
-Three lessons stood out while building and training MaterialForge:
+- **Run I**: First successful training loop. Flat rewards (~0.55). Diagnosed the silent no-op problem.
+- **Run II**: Added invalid action detection. Rewards started moving but converged to row-0 filling.
+- **Run III**: Added spatial diversity bonuses and phase rewards. Broke the row-0 local optimum.
+- **Run IV**: Added curriculum learning. Smoother training progression.
+- **Run V**: Final configuration with all fixes. Peak reward 0.87.
 
-1. Reward quality matters more than notebook complexity. If the reward is easy to exploit, the model will take cheap shortcuts.
-2. Tool-using RL gets expensive fast. Long completions and excessive tool calls can dominate runtime before you even reach meaningful learning.
-3. Environment design is the real product. Once the environment is solid, training iteration becomes much faster.
+This progression is itself a story about reward engineering — each run revealed a new failure mode, and each fix required understanding why the model was doing what it was doing.
 
-## What We Improved Along the Way
+## Lessons Learned
 
-While iterating on the notebook and training profile, we focused on making the pipeline more practical for hackathon conditions:
+**Reward quality matters more than model size.** We spent more time debugging reward shaping than we did on model selection. A badly shaped reward (one that allows silent no-ops, or rewards a trivial strategy) produces flat training no matter how large the model is. A well-shaped reward produces learning even with a 0.6B model.
 
-- shorter, cleaner GRPO runs
-- simpler evaluation
-- clearer plots
-- a more efficient training profile for quick turnaround
+**Invalid action detection is non-negotiable for tool-using RL.** If the environment silently accepts invalid actions, the model has no gradient signal to stop making them. Explicit error messages in the observation text were the single most impactful change.
 
-That matters for the final round because a reproducible, explainable training story is often more valuable than chasing the largest possible run.
+**Curriculum learning is not optional for multi-difficulty environments.** Hard scenarios with tight budgets produce near-zero rewards early in training, which means near-zero GRPO advantages, which means no learning. Starting easy and ramping up difficulty is essential.
 
-## Why OpenEnv Was the Right Fit
+**GRPO needs variance.** With `num_generations=2`, the model saw too little variation between completions to compute meaningful advantages. Increasing to 4 generations gave enough spread for the algorithm to distinguish better from worse trajectories.
 
-OpenEnv gave us the right abstraction boundary for this project.
+## Why OpenEnv Was the Right Framework
 
-It let us treat MaterialForge as a real RL environment instead of a prompt hack:
+OpenEnv provided the standard interface — `reset()`, `step()`, observation, reward — that made it straightforward to connect MaterialForge to TRL's experimental `environment_factory`. The environment runs as a standard FastAPI server on HuggingFace Spaces, and the same environment code runs in-process during training for speed.
 
-- reset
-- step
-- observation
-- reward
-- tool-based interaction
+The task manifest (`openenv.yaml`) defines three graded scenarios — basic synthesis, diamond-like crystal, and superconductor analogue — with explicit pass/good/excellent thresholds. This gives judges a concrete way to evaluate the environment beyond just looking at reward curves.
 
-That made it much easier to connect the scientific simulation side of the project to modern RL post-training libraries like TRL.
+## What This Project Demonstrates
 
-## Final Takeaway
+MaterialForge is a complete RL pipeline, end to end:
 
-MaterialForge is our attempt to show that LLM RL environments can go beyond games and into structured scientific workflows.
+1. A **novel environment** grounded in materials science concepts (percolation, coordination, phase transitions)
+2. A **multi-component reward** designed to resist shortcuts and reward genuine scientific reasoning
+3. A **working training notebook** using GRPO + Unsloth that produces measurable improvement
+4. **Saved artifacts** — 5 training runs, reward curves, loss curves, baseline comparisons
+5. A **live deployment** on HuggingFace Spaces with an interactive dashboard
 
-The project demonstrates a full stack:
+The larger point is not about the specific reward numbers. It is about showing that RL environments for LLMs can move beyond text games into domains where actions have physical consequences and the agent must reason about structure, cost, and tradeoffs over a long horizon.
 
-- a novel OpenEnv environment
-- verifiable, multi-component rewards
-- a GRPO training notebook
-- saved training artifacts
-- a clear story about why the task matters
+---
 
-The larger goal is not just to make a model place atoms on a grid. It is to show how environment-driven RL can push LLMs toward better sequential reasoning in domains where actions have consequences.
-
-## References
-
-- Environment: [README.md](README.md)
-- Research context: [RESEARCH.md](RESEARCH.md)
-- Training notebook: [training/MaterialForge_GRPO_Training.ipynb](training/MaterialForge_GRPO_Training.ipynb)
-- Run evidence used in this post:
-  - [training/runs/Run - V/reward_curve.png](training/runs/Run%20-%20V/reward_curve.png)
-  - [training/runs/Run - V/loss_curve.png](training/runs/Run%20-%20V/loss_curve.png)
-  - [training/runs/Run - V/baseline_comparison.png](training/runs/Run%20-%20V/baseline_comparison.png)
+*Built for the Meta PyTorch OpenEnv Hackathon x Scaler School of Technology — Grand Finale, by Arsh Pathan*
