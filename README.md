@@ -153,15 +153,15 @@ Over 100 training steps, the policy improved from a baseline reward of ~0.55 to 
 
 **Reward Curve**
 
-![Reward Curve](training/runs/Run%20-%20V/reward_curve.png)
+![Reward Curve](training/reward_curve.png)
 
 **Loss Curve**
 
-![Loss Curve](training/runs/Run%20-%20V/loss_curve.png)
+![Loss Curve](training/loss_curve.png)
 
 **Baseline Comparison**
 
-![Baseline Comparison](training/runs/Run%20-%20V/baseline_comparison.png)
+![Baseline Comparison](training/baseline_comparison.png)
 
 The random baseline mean reward is **0.55**, and the random best reward is **0.61**. The trained agent consistently exceeds both.
 
