@@ -191,13 +191,13 @@ class MaterialForgeTRLEnv:
 
         row_spread = min(self._best_rows_used / 4.0, 1.0)
         col_spread = min(self._best_cols_used / 4.0, 1.0)
-        spatial_bonus = 0.10 * (row_spread * col_spread)
+        spatial_bonus = 0.15 * (row_spread * col_spread)
 
         phase_bonus = 0.0
         if self._best_phase == "crystalline":
-            phase_bonus = 0.15
+            phase_bonus = 0.20
         elif self._best_phase == "polycrystalline":
-            phase_bonus = 0.05
+            phase_bonus = 0.10
 
         final = self._best_reward + spatial_bonus + phase_bonus - invalid_penalty
         return max(min(final, 1.0), 0.0)

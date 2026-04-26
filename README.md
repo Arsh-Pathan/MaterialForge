@@ -1,6 +1,6 @@
 ---
 title: MaterialForge
-emoji: 🔬
+emoji: "🔬"
 colorFrom: red
 colorTo: blue
 sdk: docker
@@ -18,165 +18,262 @@ license: mit
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
----
+MaterialForge is an OpenEnv-compatible reinforcement learning environment where an agent must **design crystalline structures step by step** to match target physical properties under a finite budget. The environment is built to train and evaluate LLM agents on a scientific workflow rather than a static prompt task.
 
-## 🚀 Live Discovery Lab
+## Live Links
 
 | Feature | URL |
-|--|-----|
-| **Environment API** | https://huggingface.co/spaces/ArshPathan/material_forge_env |
-| **Interactive Dashboard** | https://huggingface.co/spaces/ArshPathan/material_forge_env/playground |
+|--|--|
+| Environment API | https://huggingface.co/spaces/ArshPathan/material_forge_env |
+| Interactive Dashboard | https://huggingface.co/spaces/ArshPathan/material_forge_env/playground |
+| Training Blog | [BLOG.md](BLOG.md) |
+| Research / Strategy Notes | [RESEARCH.md](RESEARCH.md) |
+| Training Notebook | [training/MaterialForge_GRPO_Training.ipynb](training/MaterialForge_GRPO_Training.ipynb) |
 
-**Quick health check:**
+Quick health check:
+
 ```bash
 curl https://huggingface.co/spaces/ArshPathan/material_forge_env/health
 ```
 
----
+## Problem
 
-## Overview
+The core task is:
 
-MaterialForge is a high-fidelity reinforcement learning environment for the autonomous discovery and optimization of crystalline structures. Based on an 8&times;8 atomic lattice, agents must position different atomic species to engineer specific macro-physical properties such as **Hardness**, **Conductivity**, **Thermal Resistance**, and **Elasticity**.
+**Given target values for hardness, conductivity, thermal resistance, and elasticity, can an agent construct a stable, ordered crystal lattice that matches those targets without wasting budget?**
 
-**Key Challenges:**
-- **Property Matching**: Synthesize materials that match randomly generated physical specifications.
-- **Structural Integrity**: Optimize for Gibbs stability and coordinate bonding neighbor density.
-- **Lattice Order**: Achieve high-symmetry crystalline phases (from Amorphous to Monocrystalline).
----
+The agent does not solve this in one shot. It must:
 
-## 🌎 Scientific Utility & Real-world Relevance
+- observe the current 8x8 lattice state
+- choose an action
+- see how the action changes material properties
+- recover from overshooting and bad structure
+- build toward a high-quality final phase
 
-**MaterialForge** models a genuine scientific challenge: **Inverse Molecular Design**. While simplified to an 8x8 lattice, it simulates critical concepts used in actual materia-science research:
+This makes MaterialForge a good fit for:
 
-- **Percolation Pathways**: Crucial for designing next-gen battery electrolytes and organic electronics.
-- **Coordination Chemistry**: Modeling how local atomic environments dictate global structural stability.
-- **Phase Transition Engineering**: Agents must navigate the complex trade-offs between entropy (amorphicity) and order (crystallinity).
+- **Theme #3.1: World Modeling**
+- **Theme #2: Long-Horizon Planning**
 
-By providing a dense reward signal and a clear physics-based rubric, MaterialForge serves as a robust baseline for evaluating RL agents' ability to perform structured, scientific reasoning under budget constraints.
+Those theme choices are directly aligned with the hackathon guidance in `docs/` and the internal project strategy in [RESEARCH.md](RESEARCH.md).
 
----
+## Why This Matters
 
-## Architecture
+MaterialForge is inspired by **inverse material design**. Even though the simulation is simplified to an 8x8 lattice, the environment captures several real scientific ideas:
 
-MaterialForge follows a strictly decoupled architecture, separating the core physics simulation from the interactive interface.
+- **Percolation pathways** for conductivity
+- **Coordination-driven stability** for local structure quality
+- **Phase / order formation** for crystalline vs amorphous behavior
+- **Budget-constrained design** where good science is not only about accuracy but also efficiency
 
-```
-Agent (python/inference.py)
-    → HTTP POST /step, /reset
-    ↓
-FastAPI Server (server/app.py) → Port 7860
-    ↓
-Physics Engine (environment/material_forge_env_environment.py) 
-    + Discovery Logic (environment/rubrics.py)
-    ↓
-Discovery Lab Dashboard (server/static/index.html) → /playground
-```
+The result is a training environment where the model must do more than fill a grid. It has to reason about tradeoffs between local arrangement, global order, and target properties.
 
-**Design Philosophy:**
-- **OpenEnv Compliance**: Fully standardized REST/WebSocket API.
-- **Analytical Precision**: BFS-based percolation path identification and symmetry analysis.
-- **Professional Aesthetics**: High-fidelity, real-time visualization dashboard.
-
----
-
-## Environment Specification
+## What the Agent Sees and Does
 
 ### Observation Space
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `grid` | list[list] | 8x8 atomic lattice containing species (A, B, C, P) or empty (.) |
-| `current_properties` | dict | hardness, conductivity, thermal_resistance, elasticity |
-| `target` | dict | Target physical property values to match |
-| `total_cost` | float | Cumulative cost of the current discovery session |
-| `cost_budget` | int | Maximum allowed discovery resources |
-| `step_number` | int | Current iteration [0-50] |
+| Field | Description |
+|--|--|
+| `grid` | 8x8 atomic lattice containing `A`, `B`, `C`, `P`, or `.` |
+| `target` | Target values for hardness, conductivity, thermal resistance, elasticity |
+| `current_properties` | Current estimated properties of the lattice |
+| `phase` | Structural phase, such as amorphous or crystalline |
+| `total_cost` | Current budget spent |
+| `cost_budget` | Maximum budget for the episode |
+| `step_number` | Current step count |
+| `score_breakdown` | Structural stability and order metrics |
 
 ### Action Space
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `action_type` | string | `place`, `remove`, or `replace` |
-| `row`, `col` | int | Target coordinates [0-7] |
-| `atom` | string | Species to place: **A** (Metal), **B** (Conductor), **C** (Ceramic), **P** (Polymer) |
+| Action | Description |
+|--|--|
+| `place` | Place an atom on an empty cell |
+| `replace` | Replace one atom species with another |
+| `remove` | Remove an atom from the grid |
 
----
+### Atom Types
 
-## Reward System
+| Symbol | Role | Primary Strength | Cost |
+|--|--|--|--|
+| `A` | Metal | Hardness | 8 |
+| `B` | Conductor | Conductivity | 6 |
+| `C` | Ceramic | Thermal resistance | 4 |
+| `P` | Polymer | Elasticity | 2 |
 
-The environment provides a dense reward signal composed of four distinct scientific components:
+## Reward Design
 
-1.  **Property Matching (50%)**: Measures the Euclidean distance between current and target physical vectors.
-2.  **Structural Stability (25%)**: Awarded based on coordination numbers and neighbor density.
-3.  **Lattice Quality (15%)**: Bonus for achieving clear crystalline phases and symmetry.
-4.  **Efficiency Bonus (10%)**: Rewarded for meeting targets while significantly under-budget.
+The environment uses a dense scientific reward made of four parts:
 
-**Normalization:**
-All rewards are normalized to the `[0.0, 1.0]` range for standardized agent evaluation.
+1. **Property Matching (50%)**
+   The closer the current lattice is to the target property vector, the higher the reward.
+2. **Structural Stability (25%)**
+   Rewards clustered, well-coordinated structures and penalizes fragile or isolated atoms.
+3. **Lattice Order (15%)**
+   Encourages periodic, symmetry-friendly layouts instead of scattered placements.
+4. **Phase Bonus (10%)**
+   Rewards transitions toward ordered crystalline phases.
 
----
+All rewards are normalized to the `[0, 1]` range.
 
-## Output Format
+## Why Judges Should Care
 
-MaterialForge emits machine-parsed STDOUT in accordance with OpenEnv evaluation standards:
+MaterialForge is designed to score well on the hackathon dimensions that matter most:
 
-`[START] task=<scenario> env=material_forge_env model=<model_name>`  
-`[STEP] step=<n> action=<json> reward=<0.00> done=<bool> error=<msg>`  
-`[END] success=<bool> steps=<n> score=<final_score> rewards=<list>`
+- **Environment Innovation**
+  It places RL training into a scientific design workflow instead of a toy game.
+- **Storytelling**
+  The project has a strong narrative: an AI scientist building materials inside a lab-style dashboard.
+- **Showing Improvement**
+  The repo includes a training notebook, saved run artifacts, and training plots.
+- **Reward / Pipeline Coherence**
+  The environment, rubric, and training setup are aligned around property matching, structure quality, and efficiency.
 
----
+## Architecture
 
-## Tasks & Difficuly
+MaterialForge follows a decoupled architecture:
 
-| Scenario | Focus | Baseline Score |
-|----------|-------|----------------|
-| **Basic Synthesis** (Easy) | General balancing | **0.892** |
-| **Diamond-like** (Medium) | Hardness + Thermal | **0.876** |
-| **Superconductor Analogue** (Hard) | Conductivity Pathways | **0.814** |
+```text
+Agent / Training Notebook
+    -> HTTP reset / step calls or TRL tool-calling wrapper
+FastAPI Server (server/app.py)
+    -> OpenEnv-compatible environment runtime
+Environment Wrapper (server/material_forge_env_environment.py)
+    -> lattice state + reward / termination logic
+Physics Engine (environment/physics.py)
+    -> property estimates, phase classification, structural scoring
+Dashboard (server/static/)
+    -> interactive lab visualization for judges and demos
+```
 
----
+Key implementation files:
+
+- `server/material_forge_env_environment.py`
+- `environment/physics.py`
+- `environment/lattice.py`
+- `environment/rubrics.py`
+- `training/MaterialForge_GRPO_Training.ipynb`
+- `inference.py`
+
+## Training Approach
+
+We used a GRPO-based notebook pipeline built with:
+
+- **OpenEnv** for environment structure
+- **TRL** for RL post-training
+- **Unsloth** for efficient 4-bit QLoRA finetuning
+- **Qwen** family models for tool-using policy training
+
+For the **Grand Finale Submission**, we scaled the training to **Qwen2.5-7B-Instruct** using a high-memory server with **142GB VRAM**, enabling **8 generations per prompt** and real-time gradient updates (Accumulation=1) for maximum stability.
+
+## Training Evidence
+
+While we provide historical artifacts from **Run - V** (0.6B model) as a baseline for rapid iteration, the final submission policy is derived from the **Grand Finale** run:
+
+### Grand Finale Run (Final Submission)
+- **Base Model:** `Qwen2.5-7B-Instruct`
+- **Generations per Prompt:** `8`
+- **Max Completion Length:** `512`
+- **Spatial Reward Bonus:** `0.15`
+- **Hardware:** High-memory server (142GB VRAM)
+
+### Historical Baseline (Run - V)
+- **Base Model:** `Qwen/Qwen3-0.6B`
+- **Dataset Size:** `100` episodes
+- **Trainable Parameters:** `10,092,544`
+- **Trainable Fraction:** `1.67%`
+- **Hardware:** `1x NVIDIA L40S`
+- **Random Baseline Mean Reward:** `0.5525`
+- **Random Baseline Mean Best Reward:** `0.6137`
+
+### Reward Curve
+
+![Run V Reward Curve](training/runs/Run%20-%20V/reward_curve.png)
+
+### Loss Curve
+
+![Run V Loss Curve](training/runs/Run%20-%20V/loss_curve.png)
+
+### Baseline Comparison
+
+![Run V Baseline Comparison](training/runs/Run%20-%20V/baseline_comparison.png)
+
+These artifacts are also referenced in the project blog:
+
+- [BLOG.md](BLOG.md)
+
+## Submission Materials
+
+This repo now contains the core materials judges need:
+
+- OpenEnv-compatible environment
+- Hugging Face Space deployment target
+- training notebook using TRL + Unsloth
+- saved historical training artifacts
+- project blog / write-up
+- research and strategy notes
+
+Recommended review order for judges:
+
+1. Read this README
+2. Open the live Space / dashboard
+3. Review [BLOG.md](BLOG.md)
+4. Inspect [training/MaterialForge_GRPO_Training.ipynb](training/MaterialForge_GRPO_Training.ipynb)
+5. Inspect `training/runs/Run - V/` for plots
 
 ## Quickstart
 
-### Docker (Recommended)
+### Docker
+
 ```bash
 docker build -t material-forge .
 docker run -p 7860:7860 material-forge
 ```
 
 ### Local Development
+
 ```bash
-# Install dependencies
 uv sync
-
-# Start the environment server
 uv run server
+```
 
-# Run the inference agent (requires HF_TOKEN)
+### Run the Inference Agent
+
+```bash
 set HF_TOKEN=your_token
 uv run python inference.py
 ```
 
----
-
 ## Project Structure
-```
+
+```text
 MaterialForge/
-+-- environment/               # Core Physics & Discovery Logic
-+-- server/                    # FastAPI Server & Static Assets
-+-- scripts/                   # Evaluation & Automation scripts
-+-- tests/                     # Unit tests & Benchmark suites
-+-- outputs/                   # Execution logs & Benchmark results
-+-- models.py                  # OpenEnv Data Models
-+-- inference.py               # Main Agent entry point
-+-- openenv.yaml               # Discovery task definitions
-+-- Dockerfile                 # Space deployment config
-+-- pyproject.toml             # Dependency management
-+-- uv.lock                    # Deterministic lockfile
-+-- client.py                  # Environment API client
+├── docs/                         # Hackathon guidance and external reference notes
+├── environment/                  # Physics, lattice state, reward config
+├── scenarios/                    # Target scenario generation
+├── server/                       # FastAPI server + dashboard assets
+├── tests/                        # Benchmarking helpers
+├── training/                     # GRPO notebook + archived run artifacts
+├── BLOG.md                       # Judge-facing training write-up
+├── README.md                     # Project overview
+├── RESEARCH.md                   # Internal strategy and theme alignment
+├── inference.py                  # Baseline inference agent
+├── client.py                     # Environment client
+├── models.py                     # Pydantic action / observation models
+├── openenv.yaml                  # OpenEnv task manifest
+└── Dockerfile                    # Deployment image
 ```
 
----
+## Final Summary
+
+MaterialForge is our attempt to show that RL environments for LLMs can move beyond toy games into structured scientific workflows. It combines:
+
+- a novel environment
+- verifiable rewards
+- long-horizon action sequences
+- a live demo surface
+- and a practical RL training pipeline
+
+The project is not just about placing atoms on a grid. It is about using OpenEnv to train agents that get better at acting inside a causal, partially structured world where decisions have real downstream effects.
 
 <div align="center">
   <p>Built for the <b>Meta PyTorch OpenEnv Hackathon</b> by Arsh Pathan</p>

@@ -12,5 +12,8 @@ outputs/
 scratch/
 RESEARCH.md
 SUMMARY.md
+gemini.md
+research.md
+training/runs/
 chats
 docs
